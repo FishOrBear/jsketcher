@@ -37,7 +37,8 @@ export const PatternLinearOperation: OperationDescriptor<patternLinearParams> = 
     const created = [];
 
     params.inputBodies.forEach((shellToPatern, index) => {
-      for (let i = 2; i <= params.qty; i++) {
+      for (let i = 2; i <= params.qty; i++)
+      {
         let distanceForInstance = 0;
         if (params.patternMethod == 'Step Distance') distanceForInstance = params.distance * (i - 1);
         if (params.patternMethod == 'Span Distance') distanceForInstance = (params.distance / (params.qty - 1)) * (i - 1);
@@ -50,7 +51,7 @@ export const PatternLinearOperation: OperationDescriptor<patternLinearParams> = 
         oci.copy(shellToPatern, newShellName);
         AddLocation(newShellName, tr.toFlatArray());
 
-
+        //@ts-ignore
         const resultingShell = occ.io.getShell(newShellName, new SameTopologyProductionAnalyzer(shellToPatern, params.featureId + "P"));
         resultingShell.id = shellToPatern.id + "[" + "PL:" + params.featureId + "]" + "[" + "I:" + i + "]";
         created.push(resultingShell);

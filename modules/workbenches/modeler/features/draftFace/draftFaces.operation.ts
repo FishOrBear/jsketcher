@@ -20,6 +20,7 @@ export const DraftFacesOperation: OperationDescriptor<DraftFacesParams> = {
   icon,
   info: 'Add draft angle to faces',
   path: __dirname,
+  //@ts-ignore
   paramsInfo: ({ tools, boolean }) => `(${r(tools)} ${r(boolean)})`,
   run: (params: DraftFacesParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;

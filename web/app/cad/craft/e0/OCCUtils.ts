@@ -78,7 +78,7 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
     return [{
       face: faceName,
       topoShape: brepShell,
-    
+
     }]
 
   }
@@ -94,23 +94,27 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
 
     const consumed = [];
 
-    if (sketchSource && sketchSource.parent instanceof MOpenFaceShell) {
+    if (sketchSource && sketchSource.parent instanceof MOpenFaceShell)
+    {
       consumed.push(sketchSource.parent);
     }
 
-    if (!booleanDef || booleanDef.kind === 'NONE') {
+    if (!booleanDef || booleanDef.kind === 'NONE')
+    {
 
       return {
         created: tools,
         consumed
       }
 
-    } else {
+    } else
+    {
 
       const kind = booleanDef.kind;
 
       let targets = booleanDef.targets;
-      if (!targets || targets.length === 0) {
+      if (!targets || targets.length === 0)
+      {
         targets = ctx.cadRegistry.shells;
       }
 
@@ -118,7 +122,8 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
       const targetNames = targets.map((target, i) => {
         const targetName = 'Target/' + i;
         const wasPushed = ctx.occService.io.pushModel(target, targetName);
-        if (!wasPushed) {
+        if (!wasPushed)
+        {
           return null;
         }
         return targetName;
@@ -132,11 +137,14 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
       targetNames.forEach(targetName => oci.baddobjects(targetName));
       tools.forEach(tool => {
         oci.baddtools(tool)
+        //@ts-ignore
         oci.settolerance(tool, 0.0001);
       });
-      if (booleanDef.simplify === true) {
+      if (booleanDef.simplify === true)
+      {
         oci.bsimplify("-e", 1, "-f", 1);
-      } else {
+      } else
+      {
         oci.bsimplify("-e", 0, "-f", 0);
       }
       oci.bfuzzyvalue(0.0001);
@@ -145,7 +153,7 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
       oci.bfillds();
       oci.bapibop("BooleanResult", booleanKindToOCCBopType(kind));
 
-
+      //@ts-ignore
       if (booleanDef.simplify === true) oci.unifysamedom("BooleanResult", "BooleanResult");
 
       targets.forEach(t => consumed.push(t));
@@ -163,6 +171,7 @@ export function createOCCUtils(ctx: ApplicationContext): OCCUtils {
 
 
   return {
+    //@ts-ignore
     wiresToFaces, sketchToFaces, applyBooleanModifier, wiresToFace, sketchToFace,
   }
 
@@ -176,7 +185,8 @@ enum OccBBOPTypes {
 }
 
 function booleanKindToOCCBopType(kind: BooleanKind): number {
-  switch (kind) {
+  switch (kind)
+  {
     case "INTERSECT": return OccBBOPTypes.COMMON;
     case "UNION": return OccBBOPTypes.FUSE;
     case "SUBTRACT": return OccBBOPTypes.CUT;

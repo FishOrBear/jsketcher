@@ -32,6 +32,7 @@ export const MirrorBodyOperation: OperationDescriptor<MirrorBodyParams> = {
       oci.copy(shellToMirror, newShellName);
       oci.tmirror(newShellName, ...params.face.csys.origin.data(), ...params.face.csys.z.normalize().data());
 
+      //@ts-ignore
       const resultingShell = occ.io.getShell(newShellName, new SameTopologyProductionAnalyzer(shellToMirror, params.featureId + "MIRROR"));
       resultingShell.id = shellToMirror.id + "[" + "M" + ":" + params.featureId + "]";
       created.push(resultingShell)

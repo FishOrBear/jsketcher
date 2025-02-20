@@ -1,14 +1,14 @@
-import React, {useCallback, useContext, useEffect} from 'react';
-import {useStreamWithUpdater} from "ui/effects";
-import {ReactApplicationContext} from "../dom/ReactApplicationContext";
-import {GenericWizard} from "ui/components/GenericWizard";
+import React, { useCallback, useContext, useEffect } from 'react';
+import { useStreamWithUpdater } from "ui/effects";
+import { ReactApplicationContext } from "../dom/ReactApplicationContext";
+import { GenericWizard } from "ui/components/GenericWizard";
 import Field from "ui/components/controls/Field";
-import {Group} from "../craft/wizard/components/form/Form";
+import { Group } from "../craft/wizard/components/form/Form";
 import Label from "ui/components/controls/Label";
 import Folder from "ui/components/Folder";
-import {never} from "lstream";
+import { never } from "lstream";
 import NumberControl from "ui/components/controls/NumberControl";
-import {Matrix3x4} from "math/matrix";
+import { Matrix3x4 } from "math/matrix";
 
 export function LocationDialog() {
 
@@ -20,7 +20,8 @@ export function LocationDialog() {
   const [location, setLocation] = useStreamWithUpdater(() => req ? req.shell.location$ : never<Matrix3x4>());
 
   useEffect(() => {
-    if (!req) {
+    if (!req)
+    {
       return;
     }
 
@@ -60,7 +61,8 @@ export function LocationDialog() {
   // }, [setLocation]);
 
 
-  if (!req) {
+  if (!req)
+  {
     return null;
   }
 
@@ -103,6 +105,7 @@ export function LocationDialog() {
       </Group>
     </Folder>
     <Folder title='Rotation'>
+      {/*@ts-ignore*/}
       <Group>
         {/*<Field active={false} name='Azimuth'>*/}
         {/*  <Label>Axis Azimuth:</Label>*/}

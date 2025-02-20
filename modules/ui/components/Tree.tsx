@@ -1,8 +1,9 @@
-import React, {useState, ReactNode} from "react";
+import React, { useState, ReactNode } from "react";
 import cx from 'classnames';
-import {GoPrimitiveDot, GoTriangleDown, GoTriangleRight} from "react-icons/go";
+//@ts-ignore
+import { GoPrimitiveDot, GoTriangleDown, GoTriangleRight } from "react-icons/go";
 
-export function Tree({children, icon, label, initCollapsed = false, className, onClick, ...props} : {
+export function Tree({ children, icon, label, initCollapsed = false, className, onClick, ...props }: {
   initCollapsed?: boolean
   children?: ReactNode,
   icon?: ReactNode,
@@ -19,8 +20,8 @@ export function Tree({children, icon, label, initCollapsed = false, className, o
 
     {!headless && <div className='tree-caption'>
       {children ?
-        (<span onClick={() => setCollapsed(collapsed => !collapsed)}>{collapsed ? <GoTriangleRight/> :
-          <GoTriangleDown/>}</span>) :
+        (<span onClick={() => setCollapsed(collapsed => !collapsed)}>{collapsed ? <GoTriangleRight /> :
+          <GoTriangleDown />}</span>) :
         <span className='tree-placeholder'><GoPrimitiveDot /></span>
       }
       <span className='tree-icon'>{icon}</span>

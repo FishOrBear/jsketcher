@@ -17,6 +17,7 @@ export const SimplifyOperation: OperationDescriptor<SimplifyParams> = {
   icon,
   info: 'Simplify faces',
   path: __dirname,
+  //@ts-ignore
   paramsInfo: ({ tools, Simplify }) => `(${r(tools)} ${r(Simplify)})`,
   run: (params: SimplifyParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
@@ -28,7 +29,9 @@ export const SimplifyOperation: OperationDescriptor<SimplifyParams> = {
 
     params.tools.forEach((bodyToSimplify) => {
       const analyzer = new FromMObjectProductionAnalyzer([bodyToSimplify]);
+      //@ts-ignore
       oci.fixshape("SimplifiedShell", bodyToSimplify);
+      //@ts-ignore
       oci.unifysamedom("SimplifiedShell", "SimplifiedShell");
 
       created.push(occ.io.getShell("SimplifiedShell", analyzer));
