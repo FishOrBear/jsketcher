@@ -8,6 +8,7 @@ import { OperationDescriptor } from "cad/craft/operationBundle";
 
 
 interface smFlangeParams {
+  featureId: string;
   angle: number;
   face: MFace;
   flip: boolean;
@@ -27,7 +28,7 @@ export const smFlangeOperation: OperationDescriptor<smFlangeParams> = {
   label: 'Flange',
   icon: 'img/cad/smFlange',
   info: 'Creates Sheet metal flange',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ angle }) => `(${r(angle)})`,
   run: (params: smFlangeParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
@@ -40,19 +41,22 @@ export const smFlangeOperation: OperationDescriptor<smFlangeParams> = {
     let revolveVectorOrigin;
     let revolveVectorDirection;
 
-    for (let i = 0; i < face.edges.length; i++) {
+    for (let i = 0; i < face.edges.length; i++)
+    {
       const edgeKind = face.edges[i].productionInfo.sheetMetal.kind;
-      if (edgeKind == "FLAT/A" && !params.flip) {
+      if (edgeKind == "FLAT/A" && !params.flip)
+      {
         revolveVector = face.edges[i].location;
         revolveVectorOrigin = revolveVector.origin;
         revolveVectorDirection = revolveVector.direction.negate();
-        revolveVectorOrigin.z -=2;
+        revolveVectorOrigin.z -= 2;
       }
-      if (edgeKind == "FLAT/B" && params.flip) {
+      if (edgeKind == "FLAT/B" && params.flip)
+      {
         revolveVector = face.edges[i].toAxis();
         revolveVectorOrigin = revolveVector.origin;
         revolveVectorDirection = revolveVector.direction;
-        revolveVectorOrigin.z +=2;
+        revolveVectorOrigin.z += 2;
       }
     }
 
@@ -74,7 +78,8 @@ export const smFlangeOperation: OperationDescriptor<smFlangeParams> = {
 
     tools[0].edges.forEach((newEdge) => {
       params.face.shell.edges.forEach((edgeToLookAt) => {
-        if (JSON.stringify(newEdge.topology.data.tessellation) == JSON.stringify(edgeToLookAt.topology.data.tessellation)) {
+        if (JSON.stringify(newEdge.topology.data.tessellation) == JSON.stringify(edgeToLookAt.topology.data.tessellation))
+        {
           console.debug("We have a match", edgeToLookAt.productionInfo.sheetMetal.kind);
           // newEdge.productionInfo = {sheetMetal: {kind: edgeToLookAt.productionInfo.sheetMetal.kind}};
           //newEdge.productionInfo.sheetMetal.kind = edgeToLookAt.productionInfo.sheetMetal.kind;
@@ -88,7 +93,8 @@ export const smFlangeOperation: OperationDescriptor<smFlangeParams> = {
 
     operationResult.created.forEach(shell => {
       shell.traverse(obj => {
-        if (obj.productionInfo?.role) {
+        if (obj.productionInfo?.role)
+        {
           obj.productionInfo.sheetMetal = {
             kind: ROLE_TO_SM_KIND[obj.productionInfo.role]
           }

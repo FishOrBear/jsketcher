@@ -1,7 +1,7 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {ApplicationContext} from "cad/context";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {abSegmentsToDigraph} from "./pathFinderLogic/js/sided_ab_graphs/digraph_ab_builder"
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { ApplicationContext } from "cad/context";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { abSegmentsToDigraph } from "./pathFinderLogic/js/sided_ab_graphs/digraph_ab_builder"
 import {
   findShortestPathForAllPairsAsync,
   simpleArrayToPointPairs
@@ -9,6 +9,7 @@ import {
 
 
 interface autoRouteParams {
+  featureId: string;
   thickness: number;
 }
 
@@ -51,11 +52,13 @@ export const AutoRouteOperation: OperationDescriptor<autoRouteParams> = {
 
     const segmentResults = [];
 
-    for (const wire of report) {
+    for (const wire of report)
+    {
       // ...use `element`...
       //console.log(wire);
 
-      for (const segment of wire.route.segments) {
+      for (const segment of wire.route.segments)
+      {
         // ...use `element`...
         //console.log(segment);
         if (segmentResults[segment] == undefined) segmentResults[segment] = [];
@@ -102,7 +105,8 @@ async function sidedAdPairsResolve(segmentsJson, connections, brief, errorElemen
     + pointPairs.length + " pairs from " + digraph.getNumberOfNodes() + " nodes, "
     + ((t2 - t1) / pointPairs.length) + " ms/pair<br>&nbsp;";
   //document.getElementById(timingElementId).innerHTML = timing;
-  if (brief) {
+  if (brief)
+  {
     pointPairs = pointPairs.map(pair => pair.briefClone())
   }
   return pointPairs;

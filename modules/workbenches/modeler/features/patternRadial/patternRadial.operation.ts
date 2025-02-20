@@ -1,18 +1,19 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {MFace} from "cad/model/mface";
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { MFace } from "cad/model/mface";
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
 import Axis from "math/axis";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {MShell} from 'cad/model/mshell';
-import {Matrix3x4} from "math/matrix";
-import {AddLocation, SetLocation} from "cad/craft/e0/interact";
-import {DEG_RAD} from "math/commons";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { MShell } from 'cad/model/mshell';
+import { Matrix3x4 } from "math/matrix";
+import { AddLocation, SetLocation } from "cad/craft/e0/interact";
+import { DEG_RAD } from "math/commons";
 import { SameTopologyProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 
 import icon from "./RADIAL-PATTERN.svg"
 
 interface patternRadialParams {
+  featureId: string;
   inputBodies: MShell[];
   patternMethod: string;
   face: MFace;
@@ -27,7 +28,7 @@ export const PatternRadialOperation: OperationDescriptor<patternRadialParams> = 
   label: 'Radial pattern',
   icon,
   info: 'Creates a Radial pattern.',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: p => `( ${p.patternMethod} ${r(p.angle * DEG_RAD)})`,
   run: (params: patternRadialParams, ctx: ApplicationContext) => {
 
@@ -37,13 +38,17 @@ export const PatternRadialOperation: OperationDescriptor<patternRadialParams> = 
     const created = [];
 
     params.inputBodies.forEach((shellToPatern, index) => {
-      for (let i = 2; i <= params.qty; i++) {
+      for (let i = 2; i <= params.qty; i++)
+      {
         let angleForInstance;
-        if (params.patternMethod == 'step') {
-          angleForInstance = params.angle*(i-1);
-        } else if (params.patternMethod == 'span') {
-          angleForInstance = (params.angle / (params.qty))*(i-1);
-        } else {
+        if (params.patternMethod == 'step')
+        {
+          angleForInstance = params.angle * (i - 1);
+        } else if (params.patternMethod == 'span')
+        {
+          angleForInstance = (params.angle / (params.qty)) * (i - 1);
+        } else
+        {
           throw 'unsupported pattern type: ' + params.patternMethod;
         }
 
@@ -51,10 +56,10 @@ export const PatternRadialOperation: OperationDescriptor<patternRadialParams> = 
 
         const tr = new Matrix3x4().rotate(angle, params.axis.direction, params.axis.origin);
 
-        const newShellName = shellToPatern.id + ":pattern/" + index + "/" +i;
+        const newShellName = shellToPatern.id + ":pattern/" + index + "/" + i;
         oci.copy(shellToPatern, newShellName);
         AddLocation(newShellName, tr.toFlatArray());
-  
+
 
 
         const resultingShell = occ.io.getShell(newShellName, new SameTopologyProductionAnalyzer(shellToPatern, params.featureId + "P"));

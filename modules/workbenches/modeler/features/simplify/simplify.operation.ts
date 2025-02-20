@@ -1,12 +1,13 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {OperationDescriptor} from "cad/craft/operationBundle";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { OperationDescriptor } from "cad/craft/operationBundle";
 import icon from "./SIMPLIFY.svg";
 import { MShell } from 'cad/model/mshell';
-import {FromMObjectProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { FromMObjectProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 
 interface SimplifyParams {
+  featureId: string;
   tools: MShell[];
 }
 
@@ -15,8 +16,8 @@ export const SimplifyOperation: OperationDescriptor<SimplifyParams> = {
   label: 'Simplify',
   icon,
   info: 'Simplify faces',
-  path:__dirname,
-  paramsInfo: ({tools, Simplify}) => `(${r(tools)} ${r(Simplify)})`,
+  path: __dirname,
+  paramsInfo: ({ tools, Simplify }) => `(${r(tools)} ${r(Simplify)})`,
   run: (params: SimplifyParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
     const oci = occ.commandInterface;

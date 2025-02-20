@@ -2,12 +2,13 @@ import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
 import { ApplicationContext } from "cad/context";
 import { EntityKind } from "cad/model/entities";
 import { OperationDescriptor } from "cad/craft/operationBundle";
-import {FromMObjectProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { FromMObjectProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 import icon from "./DRAFT.svg";
 import { MFace } from 'cad/model/mface';
 
 
 interface DraftFacesParams {
+  featureId: string;
   draftFaces: MFace[];
   baseFace: MFace;
   angle: number;
@@ -35,7 +36,8 @@ export const DraftFacesOperation: OperationDescriptor<DraftFacesParams> = {
     //add all the edges and size to separate arrays for each shell that edges are selected from
 
     params.draftFaces.forEach((face) => {
-      if (!returnObject.consumed.includes(face.shell)) {
+      if (!returnObject.consumed.includes(face.shell))
+      {
         returnObject.consumed.push(face.shell);
         bodiesToDraft[face.shell.id] = [];
       }
@@ -62,14 +64,14 @@ export const DraftFacesOperation: OperationDescriptor<DraftFacesParams> = {
           ...params.baseFace.csys.z.normalize().data()
         )
       });
-  
+
       //must be a french word for draft
-      oci.depouille(shellToOpperateOnName+"DRAFT", shellToOpperateOn[0].shell, ...params.baseFace.csys.z.normalize().data(), ...arggs);
-  
+      oci.depouille(shellToOpperateOnName + "DRAFT", shellToOpperateOn[0].shell, ...params.baseFace.csys.z.normalize().data(), ...arggs);
+
       returnObject.consumed.push(params.draftFaces[0].shell);
       const analyzer = new FromMObjectProductionAnalyzer([shellToOpperateOn[0].shell]);
 
-      returnObject.created.push(occ.io.getShell(shellToOpperateOnName+"DRAFT", analyzer));
+      returnObject.created.push(occ.io.getShell(shellToOpperateOnName + "DRAFT", analyzer));
 
 
     });
@@ -81,7 +83,7 @@ export const DraftFacesOperation: OperationDescriptor<DraftFacesParams> = {
 
 
 
-    
+
 
 
     return returnObject;

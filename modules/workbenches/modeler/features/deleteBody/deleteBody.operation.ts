@@ -1,11 +1,12 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {MShell} from "cad/model/mshell";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { MShell } from "cad/model/mshell";
 import icon from "./DELETE-BODY.svg"
 
 interface DeleteBodyParams {
+  featureId: string;
   tools: MShell[];
 }
 
@@ -14,7 +15,7 @@ export const DeleteBodyOperation: OperationDescriptor<DeleteBodyParams> = {
   label: 'DeleteBody',
   icon,
   info: 'Delete Bodies',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ tools }) => `(${r(tools)})`,
   run: (params: DeleteBodyParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;

@@ -1,15 +1,16 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {MBrepFace, MFace} from "cad/model/mface";
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {BooleanDefinition} from "cad/craft/schema/common/BooleanDefinition";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { MBrepFace, MFace } from "cad/model/mface";
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
 import Axis from "math/axis";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {FaceRef} from "cad/craft/e0/OCCUtils";
-import {FromMObjectProductionAnalyzer, FromSketchProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { FaceRef } from "cad/craft/e0/OCCUtils";
+import { FromMObjectProductionAnalyzer, FromSketchProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 import icon from "./REVOLVE.svg";
 
 interface RevolveParams {
+  featureId: string;
   angle: number;
   face: MFace;
   axis: Axis,
@@ -21,8 +22,8 @@ export const RevolveOperation: OperationDescriptor<RevolveParams> = {
   label: 'Revolve',
   icon,
   info: 'Revolves 2D sketch',
-  path:__dirname,
-  paramsInfo: ({angle}) => `(${r(angle)})`,
+  path: __dirname,
+  paramsInfo: ({ angle }) => `(${r(angle)})`,
   run: (params: RevolveParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
     const oci = occ.commandInterface;
@@ -32,13 +33,16 @@ export const RevolveOperation: OperationDescriptor<RevolveParams> = {
     const sketchId = face.id;
     const sketch = ctx.sketchStorageService.readSketch(sketchId);
 
-    if (!sketch) {
-      if (face instanceof MBrepFace) {
+    if (!sketch)
+    {
+      if (face instanceof MBrepFace)
+      {
         const args = ["FaceTool", face, ...params.axis.origin.data(), ...params.axis.direction.data(), params.angle];
         oci.revol(...args);
         return occ.utils.applyBooleanModifier([occ.io.getShell("FaceTool")], params.boolean, face, [],
           (targets, tools) => new FromMObjectProductionAnalyzer(targets, [face]));
-      } else {
+      } else
+      {
         throw "can't extrude an empty surface";
       }
     }

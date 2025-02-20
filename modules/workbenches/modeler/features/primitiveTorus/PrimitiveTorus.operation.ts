@@ -9,6 +9,7 @@ import { ExpectedOrderProductionAnalyzer } from "cad/craft/production/production
 import icon from "./TORUS.svg";
 
 interface PrimitiveTorusParams {
+  featureId: string;
   radius: number,
   tubeRadius: number,
   locations: MDatum,
@@ -20,7 +21,7 @@ export const PrimitiveTorusOperation: OperationDescriptor<PrimitiveTorusParams> 
   label: 'Torus',
   icon,
   info: 'Primitive Torus',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ radius, tubeRadius }) => `(${r(radius)} , ${r(tubeRadius)} )`,
   form: [
     {

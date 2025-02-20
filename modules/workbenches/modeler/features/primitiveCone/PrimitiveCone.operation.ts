@@ -9,6 +9,8 @@ import { ExpectedOrderProductionAnalyzer } from "cad/craft/production/production
 import icon from "./CONE.svg";
 
 interface PrimitiveConeParams {
+  featureId: string;
+
   diameterA: number,
   diameterB: number,
   height: number,
@@ -21,7 +23,7 @@ export const PrimitiveConeOperation: OperationDescriptor<PrimitiveConeParams> = 
   label: 'Cone',
   icon,
   info: 'Cone',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ height, diameterA, diameterB }) => `(${r(height)} , ${r(diameterA)} , ${r(diameterB)} )`,
   form: [
     {
@@ -95,7 +97,8 @@ export const PrimitiveConeOperation: OperationDescriptor<PrimitiveConeParams> = 
       },
     ];
 
-    if (params.diameterB > 0) {
+    if (params.diameterB > 0)
+    {
       newFacesIds.push({
         id: params.featureId + 'F:BASE',
         productionInfo: {
@@ -104,7 +107,8 @@ export const PrimitiveConeOperation: OperationDescriptor<PrimitiveConeParams> = 
       })
     }
 
-    if (params.diameterA > 0) {
+    if (params.diameterA > 0)
+    {
       newFacesIds.push({
         id: params.featureId + 'F:LID',
         productionInfo: {

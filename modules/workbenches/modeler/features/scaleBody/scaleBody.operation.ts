@@ -1,11 +1,12 @@
-import {MShell} from 'cad/model/mshell';
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {OperationDescriptor} from "cad/craft/operationBundle";
+import { MShell } from 'cad/model/mshell';
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { OperationDescriptor } from "cad/craft/operationBundle";
 import icon from "./SCALE.svg";
 
 interface scaleParams {
+  featureId: string;
   distance: number;
   shells: [MShell];
 }
@@ -15,7 +16,7 @@ export const ScaleOperation: OperationDescriptor<scaleParams> = {
   label: 'Scale',
   icon,
   info: 'Scale Body',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ distance }) => `(${r(distance)})`,
   run: (params: scaleParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;

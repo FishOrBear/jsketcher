@@ -1,14 +1,15 @@
-import {ApplicationContext} from 'cad/context';
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {EntityKind} from "cad/model/entities";
-import {BooleanDefinition} from "cad/craft/schema/common/BooleanDefinition";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {MDatum} from "cad/model/mdatum";
+import { ApplicationContext } from 'cad/context';
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { EntityKind } from "cad/model/entities";
+import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { MDatum } from "cad/model/mdatum";
 import CSys from "math/csys";
 import { ExpectedOrderProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 import icon from "./CYLINDER.svg";
 
 interface PrimitiveCylinderParams {
+  featureId: string;
   diameter: number,
   height: number,
   locations: MDatum,
@@ -20,8 +21,8 @@ export const PrimitiveCylinderOperation: OperationDescriptor<PrimitiveCylinderPa
   label: 'Cylinder',
   icon,
   info: 'Primitive Cylinder',
-  path:__dirname,
-  paramsInfo: ({height, diameter}) => `(${r(height)} , ${r(diameter)} )`,
+  path: __dirname,
+  paramsInfo: ({ height, diameter }) => `(${r(height)} , ${r(diameter)} )`,
   form: [
     {
       type: 'number',

@@ -1,15 +1,16 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {BooleanDefinition} from "cad/craft/schema/common/BooleanDefinition";
-import {OperationDescriptor} from "cad/craft/operationBundle";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
+import { OperationDescriptor } from "cad/craft/operationBundle";
 import iconUnion from "./UNION.svg";
 import iconIntersection from "./INTERSECTION.svg";
 import iconSubtract from "./SUBTRACT.svg";
 
 interface BooleanParams {
+  featureId: string;
   tools: [];
-  keepTools:boolean;
+  keepTools: boolean;
   boolean: BooleanDefinition;
 }
 
@@ -18,19 +19,21 @@ export const BooleanOperation: OperationDescriptor<BooleanParams> = {
   label: 'Boolean',
   icon: iconUnion,
   info: 'Booleans 2D sketch',
-  path:__dirname,
-  paramsInfo: ({tools, boolean}) => `(${r(tools)} ${r(boolean)})`,
+  path: __dirname,
+  paramsInfo: ({ tools, boolean }) => `(${r(tools)} ${r(boolean)})`,
   run: (params: BooleanParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
     const oci = occ.commandInterface;
 
     const returnObject = occ.utils.applyBooleanModifier(params.tools, params.boolean);
-    
-    if (params.keepTools == true) {
-      // filter consumed array to remove the tools but leaving the targets regardless if 
+
+    if (params.keepTools == true)
+    {
+      // filter consumed array to remove the tools but leaving the targets regardless if
       // the targets are explicitly set or implied by leaving targets blank.
-      returnObject.consumed = returnObject.created.filter((el) =>  !params.tools.includes(el as never));
-    }else{
+      returnObject.consumed = returnObject.created.filter((el) => !params.tools.includes(el as never));
+    } else
+    {
       returnObject.consumed = returnObject.consumed.concat(params.tools);
     }
 

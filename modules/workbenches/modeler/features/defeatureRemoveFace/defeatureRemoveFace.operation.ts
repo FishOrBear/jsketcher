@@ -3,11 +3,12 @@ import { ApplicationContext } from "cad/context";
 import { EntityKind } from "cad/model/entities";
 import { OperationDescriptor } from "cad/craft/operationBundle";
 import { MFace } from "cad/model/mface";
-import {FromMObjectProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { FromMObjectProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 import icon from "./DELETE-FACE.svg";
 
 
 interface DefeatureRemoveFaceParams {
+  featureId: string;
   tools: MFace[];
 }
 
@@ -29,7 +30,7 @@ export const DefeatureRemoveFaceOperation: OperationDescriptor<DefeatureRemoveFa
 
     oci.removefeatures("resultingShape", params.tools[0].shell, ...params.tools);
 
-    created.push(occ.io.getShell("resultingShape",analyzer));
+    created.push(occ.io.getShell("resultingShape", analyzer));
 
     console.log(params.tools)
     //consumed.push(tools[0].)

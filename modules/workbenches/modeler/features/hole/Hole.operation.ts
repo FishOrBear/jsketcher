@@ -16,6 +16,7 @@ import { ExpectedOrderProductionAnalyzer } from "cad/craft/production/production
 
 
 interface HoleParams {
+  featureId: string;
   sketch: MDatum | MFace;
   diameter: number;
   depth: number;
@@ -48,35 +49,39 @@ export const HoleOperation: OperationDescriptor<HoleParams> = {
     const occ = ctx.occService;
     const oci = occ.commandInterface;
 
-    //make base hole cylinder and fancy modifer geometry for countersink/counterbore 
+    //make base hole cylinder and fancy modifer geometry for countersink/counterbore
     oci.pcylinder("result", params.diameter / 2, params.depth);
 
-    if (params.holeType === "counterbore") {
+    if (params.holeType === "counterbore")
+    {
       oci.pcylinder("holeModifier", params.counterBoreDiameter / 2, params.counterBoreDepth);
     }
 
-    if (params.holeType === "countersink") {
+    if (params.holeType === "countersink")
+    {
       const heightFromDiameterAndAngle = (params.countersinkDiameter - params.diameter) / (Math.tan((params.countersinkAngle / 180 * Math.PI) / 2));
       oci.pcone("holeModifier", params.countersinkDiameter / 2, 0, heightFromDiameterAndAngle);
     }
 
 
 
-    //union the base hole and the hole modifier together 
-    if (params.holeType !== "normal") {
+    //union the base hole and the hole modifier together
+    if (params.holeType !== "normal")
+    {
       oci.bop("result", "holeModifier");
       oci.bopfuse("result");
     }
 
     //load sketch information from face
     const sketch = ctx.sketchStorageService.readSketch(params.sketch.id);
-    const csys =params.sketch.csys;
+    const csys = params.sketch.csys;
 
     const holeSolids = [];
 
     //Look for circles and make hole solids using center points
     sketch.loops.forEach((holeSourceElement) => {
-      if (holeSourceElement instanceof Circle) {
+      if (holeSourceElement instanceof Circle)
+      {
         holeSolids.push(makeHoleSolid(
           {
             id: "holeC" + holeSourceElement.id,

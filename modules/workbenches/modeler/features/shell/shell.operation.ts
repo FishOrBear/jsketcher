@@ -1,11 +1,12 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {MFace} from "cad/model/mface";
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {OperationDescriptor} from "cad/craft/operationBundle";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { MFace } from "cad/model/mface";
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { OperationDescriptor } from "cad/craft/operationBundle";
 import icon from "./SHELL.svg"
 
 interface ShellParams {
+  featureId: string;
   thickness: number;
   faces: [MFace];
 }
@@ -15,8 +16,8 @@ export const ShellOperation: OperationDescriptor<ShellParams> = {
   label: 'Shell',
   icon,
   info: 'Shells 2D sketch',
-  path:__dirname,
-  paramsInfo: ({thickness}) => `(${r(thickness)})`,
+  path: __dirname,
+  paramsInfo: ({ thickness }) => `(${r(thickness)})`,
   run: (params: ShellParams, ctx: ApplicationContext) => {
     const occ = ctx.occService;
     const oci = occ.commandInterface;
@@ -31,7 +32,8 @@ export const ShellOperation: OperationDescriptor<ShellParams> = {
     //add all the edges and size to seperate arrays for each shell that edges are selected from
 
     params.faces.forEach((face) => {
-      if (!returnObject.consumed.includes(face.shell)) {
+      if (!returnObject.consumed.includes(face.shell))
+      {
         returnObject.consumed.push(face.shell);
         bodiesToShell[face.shell.id] = [];
       }

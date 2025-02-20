@@ -7,6 +7,7 @@ import { MDatum } from 'cad/model/mdatum';
 
 
 interface WireLineParams {
+  featureId: string;
   points: MDatum[];
 }
 
@@ -22,22 +23,22 @@ export const WireLineOperation: OperationDescriptor<WireLineParams> = {
     const oci = occ.commandInterface;
     console.log(params);
     oci.line("newLine",
-     params.points[0].csys.origin.x,
-     params.points[0].csys.origin.y,     
-     params.points[0].csys.origin.z,  
-     
-     params.points[1].csys.origin.x,
-     params.points[1].csys.origin.y,     
-     params.points[1].csys.origin.z,   
-     );
+      params.points[0].csys.origin.x,
+      params.points[0].csys.origin.y,
+      params.points[0].csys.origin.z,
+
+      params.points[1].csys.origin.x,
+      params.points[1].csys.origin.y,
+      params.points[1].csys.origin.z,
+    );
 
 
-     oci.wire("newLine", "newLine");
-     oci.edge("newLine","newLine")
-     
+    oci.wire("newLine", "newLine");
+    oci.edge("newLine", "newLine")
 
-     oci.mksweep("newLine");
-     oci.addsweep("newLine", "-R");
+
+    oci.mksweep("newLine");
+    oci.addsweep("newLine", "-R");
 
 
     const created = [occ.io.getShell("th")];

@@ -5,10 +5,11 @@ import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
 import { OperationDescriptor } from "cad/craft/operationBundle";
 import { MSketchLoop } from "cad/model/mloop";
 import { FromSketchProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
-import {FaceRef} from "cad/craft/e0/OCCUtils";
+import { FaceRef } from "cad/craft/e0/OCCUtils";
 import icon from "./LOFT.svg";
 
 interface LoftParams {
+  featureId: string;
   loops: MSketchLoop[];
   boolean: BooleanDefinition;
   loftType: string;
@@ -19,9 +20,9 @@ export const LoftOperation: OperationDescriptor<LoftParams> = {
   label: 'Loft',
   icon,
   info: 'Lofts 2D sketch',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: () => `(?)`,
-  run:async (params: LoftParams, ctx: ApplicationContext) => {
+  run: async (params: LoftParams, ctx: ApplicationContext) => {
 
     const occ = ctx.occService;
     const oci = occ.commandInterface;
@@ -42,11 +43,12 @@ export const LoftOperation: OperationDescriptor<LoftParams> = {
     let sweepSources: FaceRef[] = [];
 
     const indexOfMostSegments = 0;
-    let longestPath =  0;
+    let longestPath = 0;
     let primarySketch = {};
 
     sketches.forEach((item, index) => {
-      if(params.loops[index].contour.segments.length > longestPath){
+      if (params.loops[index].contour.segments.length > longestPath)
+      {
         longestPath = params.loops[index].contour.segments.length;
 
         primarySketch = params.loops[index].parent;

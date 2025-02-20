@@ -1,19 +1,20 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {MBrepFace, MFace} from "cad/model/mface";
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {BooleanDefinition} from "cad/craft/schema/common/BooleanDefinition";
-import {UnitVector} from "math/vector";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {MObject} from "cad/model/mobject";
-import {FaceRef} from "cad/craft/e0/OCCUtils";
-import {FromSketchProductionAnalyzer, PushPullFaceProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { MBrepFace, MFace } from "cad/model/mface";
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
+import { UnitVector } from "math/vector";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { MObject } from "cad/model/mobject";
+import { FaceRef } from "cad/craft/e0/OCCUtils";
+import { FromSketchProductionAnalyzer, PushPullFaceProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 import icon from "./EXTRUDE.svg";
 import iconCut from "./CUT.svg";
 
 interface ExtrudeParams {
+  featureId: string;
   length: number;
-  doubleSided:boolean,
+  doubleSided: boolean,
   face: MFace;
   direction?: UnitVector,
   boolean: BooleanDefinition
@@ -23,7 +24,8 @@ export const ExtrudeOperation: OperationDescriptor<ExtrudeParams> = {
   id: 'EXTRUDE',
   label: 'Extrude',
   dynamicLabel: params => {
-    switch (params.boolean?.kind) {
+    switch (params.boolean?.kind)
+    {
       case 'SUBTRACT': return 'Extrude-Cut';
       case 'INTERSECT': return 'Extrude-Intersect';
       case 'UNION': return 'Extrude-Fuse';
@@ -32,8 +34,8 @@ export const ExtrudeOperation: OperationDescriptor<ExtrudeParams> = {
   },
   icon,
   info: 'extrudes 2D sketch',
-  path:__dirname,
-  paramsInfo: ({length}) => `(${r(length)})`,
+  path: __dirname,
+  paramsInfo: ({ length }) => `(${r(length)})`,
   run: (params: ExtrudeParams, ctx: ApplicationContext, rawParams: any) => {
 
     const occ = ctx.occService;
@@ -42,11 +44,14 @@ export const ExtrudeOperation: OperationDescriptor<ExtrudeParams> = {
     const face = params.face;
 
     let dir: UnitVector;
-    if (params.direction) {
+    if (params.direction)
+    {
       dir = params.direction.normalize();
-    } else {
+    } else
+    {
       dir = face.normal().normalize();
-      if (rawParams.direction?.flip) {
+      if (rawParams.direction?.flip)
+      {
         dir._negate();
       }
     }
@@ -55,18 +60,22 @@ export const ExtrudeOperation: OperationDescriptor<ExtrudeParams> = {
     const sketchId = face.id;
     const sketch = ctx.sketchStorageService.readSketch(sketchId);
 
-    if (!sketch) {
-      if (face instanceof MBrepFace) {
+    if (!sketch)
+    {
+      if (face instanceof MBrepFace)
+      {
         oci.prism("FaceTool", face, ...extrusionVector.data());
         return occ.utils.applyBooleanModifier([occ.io.getShell("FaceTool")], params.boolean, face, [],
           (targets, tools) => new PushPullFaceProductionAnalyzer(targets, face.brepFace));
-      } else {
+      } else
+      {
         throw "can't extrude an empty surface";
       }
     }
 
     let csys = face.csys;
-    if (params.doubleSided) {
+    if (params.doubleSided)
+    {
       csys = csys.clone();
       csys.origin._minus(extrusionVector);
       extrusionVector._scale(2);

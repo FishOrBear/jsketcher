@@ -1,13 +1,14 @@
-import {roundValueForPresentation as r} from 'cad/craft/operationHelper';
-import {MFace} from "cad/model/mface";
-import {ApplicationContext} from "cad/context";
-import {EntityKind} from "cad/model/entities";
-import {BooleanDefinition} from "cad/craft/schema/common/BooleanDefinition";
-import {UnitVector} from "math/vector";
-import {OperationDescriptor} from "cad/craft/operationBundle";
-import {FromSketchProductionAnalyzer} from "cad/craft/production/productionAnalyzer";
+import { roundValueForPresentation as r } from 'cad/craft/operationHelper';
+import { MFace } from "cad/model/mface";
+import { ApplicationContext } from "cad/context";
+import { EntityKind } from "cad/model/entities";
+import { BooleanDefinition } from "cad/craft/schema/common/BooleanDefinition";
+import { UnitVector } from "math/vector";
+import { OperationDescriptor } from "cad/craft/operationBundle";
+import { FromSketchProductionAnalyzer } from "cad/craft/production/productionAnalyzer";
 
 interface smTabParams {
+  featureId: string;
   thickness: number;
   bendRadius: number;
   kFactor: number;
@@ -29,7 +30,7 @@ export const smTabOperation: OperationDescriptor<smTabParams> = {
   label: 'SM Tab',
   icon: 'img/cad/smTab',
   info: 'Create tab from sketch',
-  path:__dirname,
+  path: __dirname,
   paramsInfo: ({ thickness, bendRadius }) => `(${r(thickness)}  ${r(bendRadius)}  )`,
   run: (params: smTabParams, ctx: ApplicationContext) => {
 
@@ -39,7 +40,8 @@ export const smTabOperation: OperationDescriptor<smTabParams> = {
     const face = params.sketch;
 
     const sketch = ctx.sketchStorageService.readSketch(face.id);
-    if (!sketch) {
+    if (!sketch)
+    {
       throw 'sketch not found for the face ' + face.id;
     }
 
@@ -48,9 +50,11 @@ export const smTabOperation: OperationDescriptor<smTabParams> = {
     const dir: UnitVector = face.normal();
 
     let extrusionVector;
-    if (params.flipper == true) {
+    if (params.flipper == true)
+    {
       extrusionVector = dir.normalize()._multiply(params.thickness);
-    } else {
+    } else
+    {
       extrusionVector = dir.normalize()._multiply(params.thickness).negate();
     }
 
@@ -69,7 +73,8 @@ export const smTabOperation: OperationDescriptor<smTabParams> = {
 
     operationResult.created.forEach(shell => {
       shell.traverse(obj => {
-        if (obj.productionInfo?.role) {
+        if (obj.productionInfo?.role)
+        {
           obj.productionInfo.sheetMetal = {
             kind: ROLE_TO_SM_KIND[obj.productionInfo.role]
           }
