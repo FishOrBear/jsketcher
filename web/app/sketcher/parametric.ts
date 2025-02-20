@@ -1,16 +1,18 @@
-import {Constraints} from './constraints';
-import {AlgNumConstraint, ConstraintDefinitions} from "./constr/ANConstraints";
-import {AlgNumSubSystem} from "./constr/AlgNumSystem";
-import {state, stream} from 'lstream';
-import {toast} from "react-toastify";
-import {ISolveStage, SolvableObject} from "./constr/solvableObject";
-import {Viewer} from "./viewer2d";
+import { Constraints } from './constraints';
+import { AlgNumConstraint, ConstraintDefinitions } from "./constr/ANConstraints";
+import { AlgNumSubSystem } from "./constr/AlgNumSystem";
+import { state, stream } from 'lstream';
+import { toast } from "react-toastify";
+import { ISolveStage, SolvableObject } from "./constr/solvableObject";
+import { Viewer } from "./viewer2d";
+import { Segment } from './shapes/segment';
 
-export {Constraints, ParametricManager}
+export { Constraints, ParametricManager }
 
 class ParametricManager {
 
   constantTable = {};
+  /** 外部常量解析器 */
   externalConstantResolver = null;
 
   $update = stream();
@@ -57,7 +59,7 @@ class ParametricManager {
   }
 
   get stage() {
-    const {list, pointer} = this.$stages.value;
+    const { list, pointer } = this.$stages.value;
     return list[pointer];
   }
 
@@ -75,14 +77,16 @@ class ParametricManager {
 
   startTransaction() {
     this.inTransaction = true;
-    for (const stage of this.stages) {
+    for (const stage of this.stages)
+    {
       stage.algNumSystem.startTransaction();
     }
   }
 
   finishTransaction() {
     this.inTransaction = false;
-    for (const stage of this.stages) {
+    for (const stage of this.stages)
+    {
       stage.algNumSystem.finishTransaction();
     }
     this.refresh();
@@ -92,36 +96,43 @@ class ParametricManager {
     return this.$constraints.value;
   }
 
-  addAlgNum(constr) {
+  addAlgNum(constr: AlgNumConstraint) {
     this.add(constr);
   }
 
-  constantResolver = value => {
+  constantResolver = (value: string) => {
     let _value = this.constantTable[value];
-    if (_value === undefined && this.externalConstantResolver) {
+    if (_value === undefined && this.externalConstantResolver)
+    {
       _value = this.externalConstantResolver(value);
     }
-    if (_value !== undefined) {
+    if (_value !== undefined)
+    {
       value = _value;
     }
     return value;
   };
 
-  rebuildConstantTable(constantDefinition) {
+  // 重建常量表
+  rebuildConstantTable(constantDefinition: string) {
     this.constantTable = {};
     if (constantDefinition == null) return;
     const lines = constantDefinition.split('\n');
     let prefix = "(function() { \n";
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = 0; i < lines.length; i++)
+    {
       const line = lines[i];
       const m = line.match(/^\s*([^\s]+)\s*=(.+)$/);
-      if (m != null && m.length === 3) {
+      if (m != null && m.length === 3)
+      {
         const constant = m[1];
-        try {
+        try
+        {
           const value = eval(prefix + "return " + m[2] + "; \n})()");
           this.constantTable[constant] = value;
           prefix += "const " + constant + " = " + value + ";\n"
-        } catch(e) {
+        } catch (e)
+        {
         }
       }
     }
@@ -129,15 +140,17 @@ class ParametricManager {
 
   onConstantsExternalChange(constantDefinition) {
     this.rebuildConstantTable(constantDefinition);
-   // this.refresh();
+    // this.refresh();
   }
 
   defineNewConstant(name, value) {
     let constantDefinition = this.constantDefinition;
     const constantText = name + ' = ' + value;
-    if (constantDefinition) {
+    if (constantDefinition)
+    {
       constantDefinition += '\n' + constantText;
-    } else {
+    } else
+    {
       constantDefinition = constantText;
     }
     this.$constantDefinition.next(constantDefinition);
@@ -155,18 +168,21 @@ class ParametricManager {
     this.refresh();
   }
 
-  _add(constr) {
+  _add(constr: AlgNumConstraint) {
 
     let highestStage = this.stages[0];
 
     constr.objects.forEach(obj => {
-      if (obj.stage.index > highestStage.index) {
+      if (obj.stage.index > highestStage.index)
+      {
         highestStage = obj.stage;
       }
     });
 
-    for (const obj of constr.objects) {
-      if (obj.generator && obj.stage === highestStage) {
+    for (const obj of constr.objects)
+    {
+      if (obj.generator && obj.stage === highestStage)
+      {
         toast("Cannot refer to a generated object from the same stage is being added to.");
         return;
       }
@@ -175,20 +191,22 @@ class ParametricManager {
     highestStage.addConstraint(constr);
 
 
-    if (highestStage !== this.stage && !this.inTransaction) {
+    if (highestStage !== this.stage && !this.inTransaction)
+    {
       toast("Constraint's been added to stage " + highestStage.index + "!")
     }
   }
 
   refresh() {
-    if (this.inTransaction) {
+    if (this.inTransaction)
+    {
       return;
     }
     this.notify();
     this.viewer.refresh();
   }
 
-  add(constr) {
+  add(constr: AlgNumConstraint) {
     this.viewer.historyManager.checkpoint();
     this._add(constr);
     this.refresh();
@@ -196,7 +214,8 @@ class ParametricManager {
 
   addAll(constrs) {
     this.viewer.historyManager.checkpoint();
-    for (let i = 0; i < constrs.length; i++) {
+    for (let i = 0; i < constrs.length; i++)
+    {
       this._add(constrs[i]);
     }
     this.refresh();
@@ -222,7 +241,8 @@ class ParametricManager {
   }
 
   _removeGenerator(generator) {
-    if (generator.__disposed) {
+    if (generator.__disposed)
+    {
       return;
     }
     generator.__disposed = true;
@@ -238,24 +258,28 @@ class ParametricManager {
 
   _removeObjects(objects, force = false) {
     objects.forEach(obj => {
-      if (obj.isRoot) {
+      if (obj.isRoot)
+      {
         this._removeObject(obj, force);
       }
     });
   }
 
   _removeObject = (obj, force?) => {
-    if (obj.__disposed) {
+    if (obj.__disposed)
+    {
       return;
     }
     obj.__disposed = true;
-    if (obj.isGenerated && !force) {
+    if (obj.isGenerated && !force)
+    {
       return;
     }
 
     obj.traverse(o => o.constraints.forEach(c => this._removeConstraint(c)));
 
-    if (obj.layer != null) {
+    if (obj.layer != null)
+    {
       obj.layer.remove(obj);
     }
 
@@ -268,7 +292,8 @@ class ParametricManager {
     [this.viewer.dimLayer, this.viewer.labelLayer].forEach(l => {
       l.traverseSketchObjects(dim => {
         obj.accept(o => {
-          if (dim.dependsOn && dim.dependsOn(o)) {
+          if (dim.dependsOn && dim.dependsOn(o))
+          {
             this._removeObject(dim);
             return false;
           }
@@ -280,7 +305,8 @@ class ParametricManager {
   };
 
   invalidate() {
-    for (const stage of this.stages) {
+    for (const stage of this.stages)
+    {
       stage.algNumSystem.invalidate();
     }
   }
@@ -297,14 +323,16 @@ class ParametricManager {
 
   prepare(interactiveObjects) {
     this.groundStage.prepare(interactiveObjects);
-    for (const stage of this.stages) {
+    for (const stage of this.stages)
+    {
       stage.prepare(interactiveObjects);
     }
   }
 
   solve(rough) {
     this.groundStage.solve(rough);
-    for (const stage of this.stages) {
+    for (const stage of this.stages)
+    {
       stage.solve(rough);
     }
   }
@@ -314,14 +342,16 @@ class ParametricManager {
     let highestStage = this.stages[0];
 
     generator.sourceObjects(obj => {
-      if (obj.stage.index > highestStage.index) {
+      if (obj.stage.index > highestStage.index)
+      {
         highestStage = obj.stage;
       }
     });
 
     this.addGeneratorToStage(generator, highestStage);
 
-    if (highestStage !== this.stage && !this.inTransaction) {
+    if (highestStage !== this.stage && !this.inTransaction)
+    {
       toast("Generator's been added to stage " + highestStage.index + "!")
     }
 
@@ -332,12 +362,14 @@ class ParametricManager {
 
     const fail = false;
     generator.sourceObjects(obj => {
-      if (obj.isGenerated && obj.stage === stage) {
+      if (obj.isGenerated && obj.stage === stage)
+      {
         toast("Cannot refer to a generated object from the same stage is being added to.");
       }
     });
 
-    if (fail) {
+    if (fail)
+    {
       return;
     }
 
@@ -355,7 +387,7 @@ class ParametricManager {
     this.add(lockConstr);
   }
 
-  lockAngle(segment) {
+  lockAngle(segment: Segment) {
     const constr = new AlgNumConstraint(ConstraintDefinitions.Angle, [segment]);
     constr.initConstants();
     this.add(constr);
@@ -387,12 +419,14 @@ class ParametricManager {
 
   accommodateStages(uptoIndex) {
     const list = this.$stages.value.list;
-    if (uptoIndex < list.length) {
+    if (uptoIndex < list.length)
+    {
       return;
     }
     let i = list.length;
     const createdStages = [];
-    for (;i<=uptoIndex;i++) {
+    for (; i <= uptoIndex; i++)
+    {
       createdStages.push(new SolveStage(this));
     }
     this.$stages.update(s => ({
@@ -410,7 +444,7 @@ class ParametricManager {
   }
 }
 
-class SolveStage implements ISolveStage{
+export class SolveStage implements ISolveStage {
 
   generators = new Set();
   objects = new Set<SolvableObject>();
@@ -453,7 +487,7 @@ class SolveStage implements ISolveStage{
   }
 
   createAlgNumSystem() {
-    const pt = {x:0,y:0};
+    const pt = { x: 0, y: 0 };
     const limit = 30; //px
     const calcVisualLimit = () => {
       //100 px limit

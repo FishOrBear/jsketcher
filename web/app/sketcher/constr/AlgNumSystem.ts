@@ -1,54 +1,90 @@
-import {prepare} from "./solver";
-import {eqEps} from "geom/tolerance";
-import {Polynomial, POW_1_FN} from "./polynomial";
-import {compositeFn} from "gems/func";
-import {AlgNumConstraint} from "./ANConstraints";
-import {SolverParam} from "./solverParam";
+import { prepare } from "./solver";
+import { eqEps } from "geom/tolerance";
+import { Polynomial, POW_1_FN } from "./polynomial";
+import { compositeFn } from "gems/func";
+import { AlgNumConstraint } from "./ANConstraints";
+import { SolverParam } from "./solverParam";
+import { SolveStage } from "../parametric";
+import { Param } from "../shapes/param";
+import { SketchObject } from "../shapes/sketch-object";
 
 const DEBUG = false;
 
+/**
+ * 代数数值子系统类
+ * 用于处理和求解几何约束系统
+ */
 export class AlgNumSubSystem {
+  /** 所有约束的数组 */
+  allConstraints: AlgNumConstraint[] = [];
 
-  allConstraints = [];
+  /** 参数到隔离的映射 */
+  paramToIsolation: Map<Param, Isolation> = new Map();
 
-  paramToIsolation = new Map();
+  /** 已消除参数的映射 */
+  eliminatedParams: Map<Param, number> = new Map();
 
-  eliminatedParams = new Map();
+  /** 多项式数组 */
+  polynomials: Polynomial[] = [];
 
-  polynomials = [];
-  substitutedParams = new Map();
-  substitutionOrder = [];
+  /** 已替换参数的映射 */
+  substitutedParams: Map<Param, Polynomial> = new Map();
 
-  polyToConstr = new Map();
+  /** 替换顺序数组 */
+  substitutionOrder: Param[] = [];
 
-  conflicting = new Set();
-  redundant  = new Set();
+  /** 多项式到约束的映射 */
+  polyToConstr: Map<Polynomial, AlgNumConstraint> = new Map();
 
-  interactiveParams = new Set();
+  /** 冲突约束集合 */
+  conflicting: Set<AlgNumConstraint> = new Set();
 
-  controlBounds = false;
+  /** 冗余约束集合 */
+  redundant: Set<AlgNumConstraint> = new Set();
 
-  snapshot = new Map();
+  /** 交互参数集合 */
+  interactiveParams: Set<Param> = new Set();
 
-  inTransaction = false;
+  /** 是否启用控制边界 */
+  controlBounds: boolean = false;
 
-  visualLimit = 100;
+  /** 快照映射 */
+  snapshot: Map<Param, number> = new Map();
 
-  stage = null;
+  /** 是否在事务中 */
+  inTransaction: boolean = false;
 
+  /** 可视限制 */
+  visualLimit: number = 100;
+
+  /** 舞台对象 */
+  stage: SolveStage;
+
+  /** 自由度 */
   dof: number = 0;
 
+  /** 是否需要进行硬求解 */
   requiresHardSolve: boolean = false;
 
+  /** 多项式隔离数组 */
   polynomialIsolations: Isolation[];
 
+  /** 计算可视限制的函数 */
   calcVisualLimit: () => number;
 
+  /** 表达式解析器函数 */
   expressionResolver: (string) => any;
 
+  /** 求解状态 */
   solveStatus: SolveStatus;
 
-  constructor(calcVisualLimit, expressionResolver, stage) {
+  /**
+   * 构造函数
+   * @param calcVisualLimit - 计算可视限制的函数
+   * @param expressionResolver - 表达式解析器函数
+   * @param stage - 舞台对象
+   */
+  constructor(calcVisualLimit: () => number, expressionResolver: (string) => any, stage: SolveStage) {
 
     this.calcVisualLimit = calcVisualLimit;
     this.expressionResolver = expressionResolver;
@@ -61,6 +97,10 @@ export class AlgNumSubSystem {
 
   }
 
+  /**
+   * 获取当前系统拥有的顶层对象
+   * @returns 系统的对象数组
+   */
   get ownTopObjects() {
     return this.stage.objects;
   }
@@ -69,21 +109,36 @@ export class AlgNumSubSystem {
     return this.dof === 0;
   }
 
-  owns(obj) {
+  /**
+   * 检查对象是否属于当前系统
+   * @param obj - 要检查的对象
+   * @returns 如果对象属于当前系统返回true
+   */
+  owns(obj: SketchObject) {
     return this.stage === obj.stage;
   }
 
-  validConstraints(callback) {
+  /**
+   * 遍历有效约束
+   * @param callback - 回调函数
+   */
+  validConstraints(callback: (c: AlgNumConstraint) => void) {
     this.allConstraints.forEach(c => {
-      if (!this.conflicting.has(c)) {
+      if (!this.conflicting.has(c))
+      {
         callback(c);
       }
     });
   }
 
-  addConstraint(constraint) {
+  /**
+   * 添加新的约束
+   * @param constraint - 要添加的约束对象
+   */
+  addConstraint(constraint: AlgNumConstraint) {
 
-    if (this.inTransaction) {
+    if (this.inTransaction)
+    {
       constraint.objects.forEach(o => o.constraints.add(constraint));
       this.allConstraints.push(constraint);
       return;
@@ -94,35 +149,49 @@ export class AlgNumSubSystem {
     this.allConstraints.push(constraint);
 
     this.prepare();
-    if (!this.isConflicting(constraint)) {
+    if (!this.isConflicting(constraint))
+    {
       this.solveFine();
-      if (!this.solveStatus.success) {
+      if (!this.solveStatus.success)
+      {
         console.log("adding to conflicts");
         this.conflicting.add(constraint);
       }
     }
 
-    if (this.isConflicting(constraint)) {
+    if (this.isConflicting(constraint))
+    {
       this.rollback();
-    // } else if (this.fullyConstrained) {
-    //   this.rollback();
-    //   this.conflicting.add(constraint);
-    //   this.redundant.add(constraint);
-    } else {
+      // } else if (this.fullyConstrained) {
+      //   this.rollback();
+      //   this.conflicting.add(constraint);
+      //   this.redundant.add(constraint);
+    } else
+    {
       constraint.objects.forEach(o => o.constraints.add(constraint));
       this.updateFullyConstrainedObjects();
     }
   }
 
+  /**
+   * 重新验证约束
+   * @param constraint - 要重新验证的约束对象
+   */
   revalidateConstraint(constraint) {
     this.conflicting.delete(constraint);
     this.redundant.delete(constraint);
   }
 
+  /**
+   * 开始事务
+   */
   startTransaction() {
     this.inTransaction = true;
   }
 
+  /**
+   * 结束事务
+   */
   finishTransaction() {
     this.inTransaction = false;
     this.prepare();
@@ -130,20 +199,32 @@ export class AlgNumSubSystem {
   }
 
 
+  /**
+   * 使系统失效
+   */
   invalidate() {
     this.prepare();
     this.solveFine();
     this.updateFullyConstrainedObjects();
   }
 
+  /**
+   * 移除约束
+   * @param constraint - 要移除的约束对象
+   */
   removeConstraint(constraint) {
     this._removeConstraint(constraint);
     this.invalidate();
   }
 
+  /**
+   * 移除约束
+   * @param constraint - 要移除的约束对象
+   */
   _removeConstraint(constraint) {
     const index = this.allConstraints.indexOf(constraint);
-    if (index !== -1) {
+    if (index !== -1)
+    {
       this.allConstraints.splice(index, 1);
       this.conflicting.delete(constraint);
       this.redundant.delete(constraint);
@@ -151,36 +232,55 @@ export class AlgNumSubSystem {
     }
   }
 
-  isConflicting(constraint) {
+  /**
+   * 检查约束是否冲突
+   * @param constraint - 要检查的约束对象
+   * @returns 如果约束冲突返回true
+   */
+  isConflicting(constraint: AlgNumConstraint) {
     return this.conflicting.has(constraint);
   }
 
+  /**
+   * 创建快照
+   */
   makeSnapshot() {
     this.snapshot.clear();
     this.validConstraints(c => c.params.forEach(p => this.snapshot.set(p, p.get())));
   }
 
+  /**
+   * 回滚到快照
+   */
   rollback() {
     this.snapshot.forEach((val, param) => param.set(val));
   }
 
+  /**
+   * 重置系统
+   */
   reset() {
     this.polyToConstr.clear();
     this.interactiveParams.clear();
     this.requiresHardSolve = false;
   }
 
+  /**
+   * 评估多项式
+   */
   evaluatePolynomials() {
 
     this.validConstraints(c => {
       let i = this.polynomials.length;
       c.collectPolynomials(this.polynomials);
-      for (; i<this.polynomials.length; i++) {
+      for (; i < this.polynomials.length; i++)
+      {
         const polynomial = this.polynomials[i];
         this.polyToConstr.set(polynomial, c);
 
         c.objects.forEach(obj => {
-          if (!this.owns(obj)) {
+          if (!this.owns(obj))
+          {
             obj.visitParams(p => {
               polynomial.eliminate(p, p.get());
             });
@@ -190,46 +290,58 @@ export class AlgNumSubSystem {
       }
     });
 
-    if (DEBUG) {
+    if (DEBUG)
+    {
       console.log('reducing system(of', this.polynomials.length, '):');
       this.polynomials.forEach(p => console.log(p.toString()));
     }
 
     let requirePass = true;
 
-    while (requirePass) {
+    while (requirePass)
+    {
       requirePass = false;
-      for (let i = 0; i < this.polynomials.length; ++i) {
+      for (let i = 0; i < this.polynomials.length; ++i)
+      {
         const polynomial = this.polynomials[i];
-        if (!polynomial) {
+        if (!polynomial)
+        {
           continue;
         }
 
-        if (polynomial.monomials.length === 0) {
+        if (polynomial.monomials.length === 0)
+        {
           this.conflicting.add(this.polyToConstr.get(polynomial));
-          if (DEBUG) {
+          if (DEBUG)
+          {
             console.log("CONFLICT: " + polynomial.toString());
           }
-          if (eqEps(polynomial.constant, 0)) {
+          if (eqEps(polynomial.constant, 0))
+          {
             this.redundant.add(this.polyToConstr.get(polynomial));
             // console.log("REDUNDANT");
           }
           this.polynomials[i] = null;
-        } else if (polynomial.isLinear && polynomial.monomials.length === 1) {
+        } else if (polynomial.isLinear && polynomial.monomials.length === 1)
+        {
           this.polynomials[i] = null;
           const monomial = polynomial.monomials[0];
           const terms = monomial.terms;
-          if (terms.length === 1) {
+          if (terms.length === 1)
+          {
             const term = terms[0];
-            if (term.fn.degree === 1) {
+            if (term.fn.degree === 1)
+            {
               const p = term.param;
               const val = - polynomial.constant / monomial.constant;
               p.set(val);
 
               this.eliminatedParams.set(p, val);
 
-              for (const otherPolynomial of this.polynomials) {
-                if (otherPolynomial) {
+              for (const otherPolynomial of this.polynomials)
+              {
+                if (otherPolynomial)
+                {
                   otherPolynomial.eliminate(p, val);
                 }
               }
@@ -238,10 +350,12 @@ export class AlgNumSubSystem {
             }
           }
 
-        } else if (polynomial.monomials.length === 2 && polynomial.isLinear) {
+        } else if (polynomial.monomials.length === 2 && polynomial.isLinear)
+        {
           let [m1, m2] = polynomial.monomials;
 
-          if (this.interactiveParams.has(m1.linearParam)) {
+          if (this.interactiveParams.has(m1.linearParam))
+          {
             const t = m1;
             m1 = m2;
             m2 = t;
@@ -251,24 +365,31 @@ export class AlgNumSubSystem {
           const p2 = m2.linearParam;
 
           const constant = - m2.constant / m1.constant;
-          if (eqEps(polynomial.constant, 0)) {
+          if (eqEps(polynomial.constant, 0))
+          {
 
             this.polynomials[i] = null;
             this.substitute(p1, new Polynomial().monomial(constant).term(p2, POW_1_FN));
-            for (const otherPolynomial of this.polynomials) {
-              if (otherPolynomial) {
+            for (const otherPolynomial of this.polynomials)
+            {
+              if (otherPolynomial)
+              {
                 otherPolynomial.substitute(p1, p2, constant);
               }
             }
             requirePass = true;
-          } else {
+          } else
+          {
             const b = - polynomial.constant / m1.constant;
 
             let transaction = compositeFn();
-            for (const otherPolynomial of this.polynomials) {
-              if (otherPolynomial && otherPolynomial !== polynomial) {
+            for (const otherPolynomial of this.polynomials)
+            {
+              if (otherPolynomial && otherPolynomial !== polynomial)
+              {
                 const polyTransaction = otherPolynomial.linearSubstitution(p1, p2, constant, b);
-                if (!polyTransaction) {
+                if (!polyTransaction)
+                {
                   transaction = null;
                   break;
                 }
@@ -279,7 +400,8 @@ export class AlgNumSubSystem {
                 });
               }
             }
-            if (transaction && transaction.functionList.length !== 0) {
+            if (transaction && transaction.functionList.length !== 0)
+            {
               transaction();
               requirePass = true;
             }
@@ -287,7 +409,8 @@ export class AlgNumSubSystem {
         }
       }
 
-      if (requirePass) {
+      if (requirePass)
+      {
         this.polynomials.forEach(polynomial => polynomial && polynomial.compact());
       }
     }
@@ -297,19 +420,28 @@ export class AlgNumSubSystem {
 
   }
 
+  /**
+   * 替换参数
+   * @param param - 要替换的参数
+   * @param overPolynomial - 替换的多项式
+   */
   substitute(param, overPolynomial) {
     this.substitutionOrder.push(param);
     this.substitutedParams.set(param, overPolynomial);
   }
 
-
+  /**
+   * 准备求解系统
+   * @param interactiveObjects - 交互对象数组
+   */
   prepare(interactiveObjects = []) {
 
     this.reset();
     interactiveObjects.forEach(obj => obj.visitParams(p => this.interactiveParams.add(p)));
 
     this.validConstraints(c => c.objects.forEach(obj => {
-      if (!this.owns(obj)) {
+      if (!this.owns(obj))
+      {
         this.requiresHardSolve = true;
       }
     }));
@@ -320,7 +452,8 @@ export class AlgNumSubSystem {
 
     this.visualLimit = this.calcVisualLimit();
 
-    if (DEBUG) {
+    if (DEBUG)
+    {
       console.log('solving system:');
       this.polynomialIsolations.forEach((iso, i) => {
         console.log(i + ". ISOLATION, DOF: " + iso.dof);
@@ -332,6 +465,9 @@ export class AlgNumSubSystem {
     }
   }
 
+  /**
+   * 评估并构建求解器
+   */
   evaluateAndBuildSolver() {
     this.polynomials = [];
     this.substitutedParams.clear();
@@ -349,14 +485,18 @@ export class AlgNumSubSystem {
     });
   }
 
-  splitByIsolatedClusters(polynomials) {
-
-
+  /**
+   * 将多项式分割为隔离的簇
+   * @param polynomials - 多项式数组
+   * @returns 隔离的簇数组
+   */
+  splitByIsolatedClusters(polynomials: Polynomial[]) {
     const graph = new Map();
 
-    function link(a, b) {
+    function link(a: Polynomial, b: Polynomial) {
       let list = graph.get(a);
-      if (!list) {
+      if (!list)
+      {
         list = [];
         graph.set(a, list);
       }
@@ -368,7 +508,8 @@ export class AlgNumSubSystem {
     polynomials.forEach(pl => {
       visited.clear();
       pl.visitParams(p => {
-        if (visited.has(p)) {
+        if (visited.has(p))
+        {
           return;
         }
         visited.add(p);
@@ -381,30 +522,38 @@ export class AlgNumSubSystem {
 
     const clusters = [];
 
-    for (const initPl of polynomials) {
-      if (visited.has(initPl)) {
+    for (const initPl of polynomials)
+    {
+      if (visited.has(initPl))
+      {
         continue
       }
       const stack = [initPl];
       const isolation = [];
-      while (stack.length) {
+      while (stack.length)
+      {
         const pl = stack.pop();
-        if (visited.has(pl)) {
+        if (visited.has(pl))
+        {
           continue;
         }
         isolation.push(pl);
         visited.add(pl);
         const params = graph.get(pl);
-        for (const p of params) {
+        for (const p of params)
+        {
           const linkedPolynomials = graph.get(p);
-          for (const linkedPolynomial of linkedPolynomials) {
-            if (linkedPolynomial !== pl) {
+          for (const linkedPolynomial of linkedPolynomials)
+          {
+            if (linkedPolynomial !== pl)
+            {
               stack.push(linkedPolynomial);
             }
           }
         }
       }
-      if (isolation.length) {
+      if (isolation.length)
+      {
         clusters.push(new Isolation(isolation, this));
       }
     }
@@ -412,18 +561,28 @@ export class AlgNumSubSystem {
     return clusters;
   }
 
+  /**
+   * 执行粗略求解
+   */
   solveRough() {
     this.solve(true);
   }
 
+  /**
+   * 执行精确求解
+   */
   solveFine() {
     this.solve(false);
   }
 
-
+  /**
+   * 执行求解
+   * @param rough - 是否进行粗略求解
+   */
   solve(rough) {
 
-    if (this.requiresHardSolve) {
+    if (this.requiresHardSolve)
+    {
       this.evaluateAndBuildSolver();
     }
 
@@ -431,7 +590,8 @@ export class AlgNumSubSystem {
       iso.solve(rough);
     });
 
-    if (!rough) {
+    if (!rough)
+    {
 
       this.solveStatus.error = 0;
       this.solveStatus.success = true;
@@ -441,22 +601,28 @@ export class AlgNumSubSystem {
         this.solveStatus.success = this.solveStatus.success && iso.solveStatus.success;
       });
 
-      if (DEBUG) {
+      if (DEBUG)
+      {
         console.log('numerical result: ' + this.solveStatus.success);
       }
     }
 
-    for (const [p, val] of this.eliminatedParams) {
+    for (const [p, val] of this.eliminatedParams)
+    {
       p.set(val);
     }
 
-    for (let i = this.substitutionOrder.length - 1; i >= 0; i--) {
+    for (let i = this.substitutionOrder.length - 1; i >= 0; i--)
+    {
       const param = this.substitutionOrder[i];
       const expression = this.substitutedParams.get(param);
       param.set(expression.value());
     }
   }
 
+  /**
+   * 更新完全约束对象的状态
+   */
   updateFullyConstrainedObjects() {
 
     this.validConstraints(c => {
@@ -466,7 +632,8 @@ export class AlgNumSubSystem {
         let allLocked = true;
 
         obj.visitParams(p => {
-          if (!this.isParamFullyConstrained(p)) {
+          if (!this.isParamFullyConstrained(p))
+          {
             allLocked = false;
           }
         });
@@ -481,23 +648,32 @@ export class AlgNumSubSystem {
     return this.eliminatedParams.has(p) || (iso && iso.fullyConstrained);
   }
 
+  /**
+   * 检查参数是否完全约束
+   * @param sourceParam 要检查的参数
+   * @returns 如果参数完全约束返回true
+   */
   isParamFullyConstrained(sourceParam) {
 
     const visited = new Set();
 
     const dfs = param => {
-      if (visited.has(param)) {
+      if (visited.has(param))
+      {
         return;
       }
       visited.add(param);
-      if (this.isParamShallowConstrained(param)) {
+      if (this.isParamShallowConstrained(param))
+      {
         return true;
       }
       const substitution = this.substitutedParams.get(param);
       let res = false;
-      if (substitution) {
+      if (substitution)
+      {
         substitution.visitParams(p => {
-          if (dfs(p)) {
+          if (dfs(p))
+          {
             res = true;
           }
         });
@@ -509,17 +685,32 @@ export class AlgNumSubSystem {
 
 }
 
-
+/**
+ * 隔离类
+ * 用于处理多项式系统的隔离求解
+ */
 class Isolation {
+  /** 多项式数组 */
   polynomials: Polynomial[];
+  /** 系统对象 */
   system: AlgNumSubSystem;
+  /** 正在求解的参数集合 */
   beingSolvedParams: Set<SolverParam>;
+  /** 正在求解的约束集合 */
   beingSolvedConstraints: Set<AlgNumConstraint>;
+  /** 自由度 */
   dof: number;
+  /** 求解状态 */
   solveStatus: SolveStatus;
+  /** 数值求解器 */
   numericalSolver: { system; diagnose; solveSystem; error; updateLock };
 
-  constructor(polynomials, system) {
+  /**
+   * 构造函数
+   * @param polynomials - 多项式数组
+   * @param system - 系统对象
+   */
+  constructor(polynomials: Polynomial[], system: AlgNumSubSystem) {
     this.system = system;
     this.polynomials = polynomials;
     this.beingSolvedParams = new Set();
@@ -531,9 +722,11 @@ class Isolation {
       this.beingSolvedConstraints.add(system.polyToConstr.get(p));
     });
 
-    for (const residual of residuals) {
+    for (const residual of residuals)
+    {
       residual.params.forEach(solverParam => {
-        if (!this.beingSolvedParams.has(solverParam)) {
+        if (!this.beingSolvedParams.has(solverParam))
+        {
           solverParam.reset(solverParam.objectParam.get());
           this.beingSolvedParams.add(solverParam);
         }
@@ -543,22 +736,32 @@ class Isolation {
     const penaltyFunction = new PolynomialResidual();
     this.beingSolvedParams.forEach(sp => {
       const param = sp.objectParam;
-      if (param.constraints) {
+      if (param.constraints)
+      {
         penaltyFunction.add(sp, param.constraints);
       }
     });
 
-    if (penaltyFunction.params.length) {
+    if (penaltyFunction.params.length)
+    {
       residuals.push(penaltyFunction);
     }
 
     this.numericalSolver = prepare(residuals);
   }
 
+  /**
+   * 检查隔离是否完全约束
+   * @returns 如果隔离完全约束返回true
+   */
   get fullyConstrained() {
     return this.dof === 0;
   }
 
+  /**
+   * 求解隔离的系统
+   * @param rough 是否进行粗略求解
+   */
   solve(rough) {
 
     this.beingSolvedConstraints.forEach(c => c.initialGuess());
@@ -566,8 +769,10 @@ class Isolation {
     this.beingSolvedParams.forEach(solverParam => {
       let val = solverParam.objectParam.get();
 
-      if (this.system.controlBounds) {
-        if (solverParam.objectParam.enforceVisualLimit && val < this.system.visualLimit) {
+      if (this.system.controlBounds)
+      {
+        if (solverParam.objectParam.enforceVisualLimit && val < this.system.visualLimit)
+        {
           val = this.system.visualLimit;
         }
       }
@@ -583,22 +788,40 @@ class Isolation {
 
 }
 
+/**
+ * 多项式残差类
+ * 用于计算和处理多项式约束的残差
+ */
 class PolynomialResidual {
 
+  /** 参数数组 */
   params = [];
+
+  /** 函数数组 */
   functions = [];
 
+  /**
+   * 添加参数和对应的函数
+   * @param param 参数
+   * @param fns 函数数组
+   */
   add(param, fns) {
     this.params.push(param);
     this.functions.push(fns);
   }
 
+  /**
+   * 计算误差
+   * @returns 计算得到的误差值
+   */
   error() {
     let err = 0;
-    for (let i = 0 ; i < this.params.length; ++i) {
+    for (let i = 0; i < this.params.length; ++i)
+    {
       const val = this.params[i].get();
       const paramFunctions = this.functions[i];
-      for (const fn of paramFunctions) {
+      for (const fn of paramFunctions)
+      {
         const d0 = fn.d0(val);
         err += d0;// * d0;
       }
@@ -607,11 +830,17 @@ class PolynomialResidual {
     return err;//0.5 * err;
   }
 
+  /**
+   * 计算梯度
+   * @param out 输出梯度的数组
+   */
   gradient(out) {
-    for (let i = 0 ; i < this.params.length; ++i) {
+    for (let i = 0; i < this.params.length; ++i)
+    {
       const val = this.params[i].get();
       const paramFunctions = this.functions[i];
-      for (const fn of paramFunctions) {
+      for (const fn of paramFunctions)
+      {
         // const d0 = fn.d0(val);
         const d1 = fn.d1(val);
         out[i] += d1; //d0 * d1; //degenerated chain rule
@@ -621,7 +850,12 @@ class PolynomialResidual {
 
 }
 
+/**
+ * 求解状态接口
+ */
 export interface SolveStatus {
+  /** 是否求解成功 */
   success: boolean;
+  /** 求解误差 */
   error: number;
 }

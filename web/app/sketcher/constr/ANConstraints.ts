@@ -1,11 +1,11 @@
-import {Param} from '../shapes/param';
-import {DEG_RAD, makeAngle0_360} from "math/commons";
-import {COS_FN, Polynomial, POW_1_FN, POW_2_FN, POW_3_FN, SIN_FN} from "./polynomial";
+import { Param } from '../shapes/param';
+import { DEG_RAD, makeAngle0_360 } from "math/commons";
+import { COS_FN, Polynomial, POW_1_FN, POW_2_FN, POW_3_FN, SIN_FN } from "./polynomial";
 
-import {cubicBezierDer1, cubicBezierDer2, cubicBezierPoint} from "geom/curves/bezierCubic";
-import {greaterThanConstraint, lessThanConstraint} from "./barriers";
-import {genericCurveStep} from "geom/impl/nurbs-ext";
-import {_normalize} from "math/vec";
+import { cubicBezierDer1, cubicBezierDer2, cubicBezierPoint } from "geom/curves/bezierCubic";
+import { greaterThanConstraint, lessThanConstraint } from "./barriers";
+import { genericCurveStep } from "geom/impl/nurbs-ext";
+import { _normalize } from "math/vec";
 import {
   AngleBetweenConstraintIcon,
   AngleConstraintIcon,
@@ -33,19 +33,24 @@ import {
   LengthAnnotation,
   RadiusLengthAnnotation
 } from "../shapes/annotations/angleAnnotation";
-import {ISolveStage, SolvableObject} from "./solvableObject";
-import {SketchObject} from "../shapes/sketch-object";
-import {IconType} from "react-icons";
-import {ConstraintAnnotation} from "./constraintAnnotation";
-import {distanceAB} from "math/distance";
+import { ISolveStage, SolvableObject } from "./solvableObject";
+import { SketchObject } from "../shapes/sketch-object";
+import { IconType } from "react-icons";
+import { ConstraintAnnotation } from "./constraintAnnotation";
+import { distanceAB } from "math/distance";
+import { Segment } from '../shapes/segment';
+import { Circle } from '../shapes/circle';
+import { EndPoint } from '../shapes/point';
+import { BezierCurve } from '../shapes/bezier-curve';
+import { Ellipse } from '../shapes/ellipse';
 
 export const ConstraintDefinitions
-  // : {
-  //   [key: string]: ConstraintSchema
-  // }
-= {
+  : {
+    [key: string]: ConstraintSchema
+  }
+  = {
 
-  PCoincident : {
+  PCoincident: {
     id: 'PCoincident',
     name: 'Two Points Coincidence',
     icon: CoincidentConstraintIcon,
@@ -82,13 +87,13 @@ export const ConstraintDefinitions
       inverted: {
         type: 'boolean',
         description: 'whether the circle attached from the opposite side',
-        initialValue: ([line, circle]) => {
+        initialValue: ([line, circle]: [Segment, Circle]) => {
           return line.nx * circle.c.x + line.ny * circle.c.y < line.w;
         }
       }
     },
 
-    defineParamsScope: ([segment, circle], callback) => {
+    defineParamsScope: ([segment, circle]: [Segment, Circle], callback) => {
       callback(segment.params.ang);
       segment.a.visitParams(callback);
       circle.c.visitParams(callback);
@@ -96,7 +101,7 @@ export const ConstraintDefinitions
     },
 
 
-    collectPolynomials: (polynomials, [ang, ax, ay, cx, cy, r], {inverted}) => {
+    collectPolynomials: (polynomials, [ang, ax, ay, cx, cy, r], { inverted }) => {
       polynomials.push(tangentLCPolynomial(ang, ax, ay, cx, cy, r, inverted));
     },
   },
@@ -106,7 +111,7 @@ export const ConstraintDefinitions
     name: 'Point On Line',
     icon: PointOnLineConstraintIcon,
 
-    defineParamsScope: ([pt, segment], callback) => {
+    defineParamsScope: ([pt, segment]: [EndPoint, Segment], callback) => {
       pt.visitParams(callback);
       segment.a.visitParams(callback);
       callback(segment.params.ang);
@@ -115,17 +120,17 @@ export const ConstraintDefinitions
     collectPolynomials: (polynomials, [x, y, ax, ay, ang]) => {
       polynomials.push(new Polynomial(0)
         .monomial(-1)
-          .term(x, POW_1_FN)
-          .term(ang, SIN_FN)
+        .term(x, POW_1_FN)
+        .term(ang, SIN_FN)
         .monomial(1)
-          .term(y, POW_1_FN)
-          .term(ang, COS_FN)
+        .term(y, POW_1_FN)
+        .term(ang, COS_FN)
         .monomial(1)
-          .term(ax, POW_1_FN)
-          .term(ang, SIN_FN)
+        .term(ax, POW_1_FN)
+        .term(ang, SIN_FN)
         .monomial(-1)
-          .term(ay, POW_1_FN)
-          .term(ang, COS_FN)
+        .term(ay, POW_1_FN)
+        .term(ang, COS_FN)
       );
     },
 
@@ -136,7 +141,7 @@ export const ConstraintDefinitions
     name: 'Point On Circle',
     icon: PointOnCurveConstraintIcon,
 
-    defineParamsScope: ([pt, circle], callback) => {
+    defineParamsScope: ([pt, circle]: [EndPoint, Circle], callback) => {
       pt.visitParams(callback);
       circle.c.visitParams(callback);
       callback(circle.r);
@@ -145,22 +150,22 @@ export const ConstraintDefinitions
     collectPolynomials: (polynomials, [x1, y1, x2, y2, r]) => {
       polynomials.push(new Polynomial()
         .monomial(-1)
-          .term(r, POW_2_FN)
+        .term(r, POW_2_FN)
         .monomial(1)
-          .term(x1, POW_2_FN)
+        .term(x1, POW_2_FN)
         .monomial(1)
-          .term(x2, POW_2_FN)
+        .term(x2, POW_2_FN)
         .monomial(-2)
-          .term(x1, POW_1_FN)
-          .term(x2, POW_1_FN)
+        .term(x1, POW_1_FN)
+        .term(x2, POW_1_FN)
 
         .monomial(1)
-          .term(y1, POW_2_FN)
+        .term(y1, POW_2_FN)
         .monomial(1)
-          .term(y2, POW_2_FN)
+        .term(y2, POW_2_FN)
         .monomial(-2)
-          .term(y1, POW_1_FN)
-          .term(y2, POW_1_FN)
+        .term(y1, POW_1_FN)
+        .term(y2, POW_1_FN)
 
       );
     },
@@ -172,12 +177,14 @@ export const ConstraintDefinitions
     name: 'Point On Bezier Curve',
     icon: PointOnCurveConstraintIcon,
 
-    initialGuess: ([p0x,p0y, p3x,p3y, p1x,p1y, p2x,p2y, t, px, py]) => {
+    initialGuess: ([p0x, p0y, p3x, p3y, p1x, p1y, p2x, p2y, t, px, py]) => {
       const _t = t.get();
-      if (_t < 0.001) {
+      if (_t < 0.001)
+      {
         t.set(0);
       }
-      if (_t > 0.999) {
+      if (_t > 0.999)
+      {
         t.set(1);
       }
     },
@@ -190,7 +197,7 @@ export const ConstraintDefinitions
       pt.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [p0x,p0y, p3x,p3y, p1x,p1y, p2x,p2y, t, px, py]) => {
+    collectPolynomials: (polynomials, [p0x, p0y, p3x, p3y, p1x, p1y, p2x, p2y, t, px, py]) => {
       polynomials.push(bezier3Polynomial(px, t, p0x, p1x, p2x, p3x));
       polynomials.push(bezier3Polynomial(py, t, p0y, p1y, p2y, p3y));
     },
@@ -202,37 +209,41 @@ export const ConstraintDefinitions
     name: 'Line & Bezier Tangency',
     icon: TangentConstraintIcon,
 
-    initialGuess([p0x,p0y, p3x,p3y, p1x,p1y, p2x,p2y, _t, px,py, nx,ny, _ang, ax,ay]) {
+    initialGuess([p0x, p0y, p3x, p3y, p1x, p1y, p2x, p2y, _t, px, py, nx, ny, _ang, ax, ay]) {
       const ang = _ang.get();
       const p0 = [p0x.get(), p0y.get(), 0];
-      const p1 = [p1x.get(),p1y.get(), 0];
-      const p2 = [p2x.get(),p2y.get(), 0];
-      const p3 = [p3x.get(),p3y.get(), 0];
+      const p1 = [p1x.get(), p1y.get(), 0];
+      const p2 = [p2x.get(), p2y.get(), 0];
+      const p3 = [p3x.get(), p3y.get(), 0];
 
       let t = 0;
       let bestT = 0.5;
       let best = -1;
-      while (t <= 1) {
+      while (t <= 1)
+      {
 
         const d1 = cubicBezierDer1(p0, p1, p2, p3, t);
         const d2 = cubicBezierDer2(p0, p1, p2, p3, t);
 
-        t = Math.min(1, t + (genericCurveStep(d1, d2)||0.1));
+        t = Math.min(1, t + (genericCurveStep(d1, d2) || 0.1));
         _normalize(d2);
 
         const measure = Math.abs(d1[0] * Math.cos(ang) + d1[1] * Math.sin(ang));
-        if (measure > best) {
+        if (measure > best)
+        {
           best = measure;
           bestT = t;
         }
 
-        if (t === 1) {
+        if (t === 1)
+        {
           break;
         }
       }
 
       //otherwise it gets stuck in the straight areas
-      if (Math.abs(bestT - _t.get()) < 0.2) {
+      if (Math.abs(bestT - _t.get()) < 0.2)
+      {
         return;
       }
 
@@ -246,7 +257,7 @@ export const ConstraintDefinitions
       ny.set(_ny);
     },
 
-    defineParamsScope: ([segment, curve], callback) => {
+    defineParamsScope: ([segment, curve]: [Segment, BezierCurve], callback) => {
       const t0 = new Param(0.5, 't');
       t0.constraints = [greaterThanConstraint(0), lessThanConstraint(1)];
 
@@ -260,31 +271,31 @@ export const ConstraintDefinitions
       segment.a.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [p0x,p0y, p3x,p3y, p1x,p1y, p2x,p2y, t, px,py, nx,ny, ang, ax,ay]) => {
+    collectPolynomials: (polynomials, [p0x, p0y, p3x, p3y, p1x, p1y, p2x, p2y, t, px, py, nx, ny, ang, ax, ay]) => {
       polynomials.push(bezier3Polynomial(px, t, p0x, p1x, p2x, p3x));
       polynomials.push(bezier3Polynomial(py, t, p0y, p1y, p2y, p3y));
       //expanded second derivative: -6 P0 t + 6 P0 + 18 P1 t - 12 P1 - 18 P2 t + 6 P2 + 6 P3 t
       const bzCubeD2 = (p, t, p0, p1, p2, p3) => new Polynomial()
         .monomial(-6)
-          .term(p0, POW_1_FN)
-          .term(t, POW_1_FN)
+        .term(p0, POW_1_FN)
+        .term(t, POW_1_FN)
         .monomial(6)
-          .term(p0, POW_1_FN)
+        .term(p0, POW_1_FN)
         .monomial(18)
-          .term(p1, POW_1_FN)
-          .term(t, POW_1_FN)
+        .term(p1, POW_1_FN)
+        .term(t, POW_1_FN)
         .monomial(-12)
-          .term(p1, POW_1_FN)
+        .term(p1, POW_1_FN)
         .monomial(-18)
-          .term(p2, POW_1_FN)
-          .term(t, POW_1_FN)
+        .term(p2, POW_1_FN)
+        .term(t, POW_1_FN)
         .monomial(6)
-          .term(p2, POW_1_FN)
+        .term(p2, POW_1_FN)
         .monomial(6)
-          .term(p3, POW_1_FN)
-          .term(t, POW_1_FN)
-      .monomial(-1)
-          .term(p, POW_1_FN);
+        .term(p3, POW_1_FN)
+        .term(t, POW_1_FN)
+        .monomial(-1)
+        .term(p, POW_1_FN);
       //expanded first derivative: -3 P0 t^2 + 6 P0 t - 3 P0 + 9 P1 t^2 - 12 P1 t + 3 P1 - 9 P2 t^2 + 6 P2 t + 3 P3 t^2
       const bzCubeD1 = (p, t, p0, p1, p2, p3) => new Polynomial()
         .monomial(-3)
@@ -320,11 +331,11 @@ export const ConstraintDefinitions
       polynomials.push(bzCubeD1(ny, t, p0y, p1y, p2y, p3y));
       polynomials.push(new Polynomial()
         .monomial(-1)
-          .term(ny, POW_1_FN)
-          .term(ang, COS_FN)
+        .term(ny, POW_1_FN)
+        .term(ang, COS_FN)
         .monomial()
-          .term(nx, POW_1_FN)
-          .term(ang, SIN_FN)
+        .term(nx, POW_1_FN)
+        .term(ang, SIN_FN)
       );
       ConstraintDefinitions.PointOnLine.collectPolynomials(polynomials, [px, py, ax, ay, ang]);
     },
@@ -336,42 +347,42 @@ export const ConstraintDefinitions
     name: 'Point On Ellipse',
     icon: PointOnCurveConstraintIcon,
 
-    defineParamsScope: ([pt, ellipse], callback) => {
+    defineParamsScope: ([pt, ellipse]: [EndPoint, Ellipse], callback) => {
       pt.visitParams(callback);
       ellipse.visitParams(callback);
       callback(new Param(Math.atan2(pt.y - ellipse.c.y, pt.x - ellipse.c.x), 't'));
     },
 
-    collectPolynomials: (polynomials, [px,py, cx,cy, rx,ry, rot, t]) => {
+    collectPolynomials: (polynomials, [px, py, cx, cy, rx, ry, rot, t]) => {
 
       polynomials.push(new Polynomial()
         .monomial(-1)
-          .term(px, POW_1_FN)
+        .term(px, POW_1_FN)
         .monomial()
-          .term(cx, POW_1_FN)
+        .term(cx, POW_1_FN)
         .monomial()
-          .term(rx, POW_1_FN)
-          .term(rot, COS_FN)
-          .term(t, COS_FN)
+        .term(rx, POW_1_FN)
+        .term(rot, COS_FN)
+        .term(t, COS_FN)
         .monomial(-1)
-          .term(ry, POW_1_FN)
-          .term(rot, SIN_FN)
-          .term(t, SIN_FN)
+        .term(ry, POW_1_FN)
+        .term(rot, SIN_FN)
+        .term(t, SIN_FN)
       );
 
       polynomials.push(new Polynomial()
         .monomial(-1)
-          .term(py, POW_1_FN)
+        .term(py, POW_1_FN)
         .monomial()
-          .term(cy, POW_1_FN)
+        .term(cy, POW_1_FN)
         .monomial()
-          .term(rx, POW_1_FN)
-          .term(rot, SIN_FN)
-          .term(t, COS_FN)
+        .term(rx, POW_1_FN)
+        .term(rot, SIN_FN)
+        .term(t, COS_FN)
         .monomial()
-          .term(ry, POW_1_FN)
-          .term(rot, COS_FN)
-          .term(t, SIN_FN)
+        .term(ry, POW_1_FN)
+        .term(rot, COS_FN)
+        .term(t, SIN_FN)
       );
 
       // polynomials.push(ellipsePoly());
@@ -384,7 +395,7 @@ export const ConstraintDefinitions
     name: 'Middle Point',
     icon: PointInMiddleConstraintIcon,
 
-    defineParamsScope: ([pt, segment], callback) => {
+    defineParamsScope: ([pt, segment]: [EndPoint, Segment], callback) => {
       segment.a.visitParams(callback);
       pt.visitParams(callback);
       segment.b.visitParams(callback);
@@ -393,30 +404,30 @@ export const ConstraintDefinitions
     collectPolynomials: (polynomials, [x1, y1, x2, y2, x3, y3]) => {
       polynomials.push(new Polynomial()
         .monomial(1)
-         .term(x1, POW_2_FN)
+        .term(x1, POW_2_FN)
         .monomial(-2)
-         .term(x1, POW_1_FN)
-          .term(x2, POW_1_FN)
+        .term(x1, POW_1_FN)
+        .term(x2, POW_1_FN)
 
         .monomial(1)
-          .term(y1, POW_2_FN)
+        .term(y1, POW_2_FN)
 
         .monomial(-2)
-          .term(y1, POW_1_FN)
-          .term(y2, POW_1_FN)
+        .term(y1, POW_1_FN)
+        .term(y2, POW_1_FN)
 
         .monomial(-1)
-          .term(x3, POW_2_FN)
+        .term(x3, POW_2_FN)
         .monomial(2)
-          .term(x3, POW_1_FN)
-          .term(x2, POW_1_FN)
+        .term(x3, POW_1_FN)
+        .term(x2, POW_1_FN)
 
         .monomial(-1)
-         .term(y3, POW_2_FN)
+        .term(y3, POW_2_FN)
 
         .monomial(2)
-         .term(y3, POW_1_FN)
-         .term(y2, POW_1_FN)
+        .term(y3, POW_1_FN)
+        .term(y2, POW_1_FN)
       );
     },
   },
@@ -426,7 +437,7 @@ export const ConstraintDefinitions
     name: 'Symmetry',
     icon: SymmetryConstraintIcon,
 
-    defineParamsScope: ([pt, segment], callback) => {
+    defineParamsScope: ([pt, segment]: [EndPoint, Segment], callback) => {
       segment.a.visitParams(callback);
       pt.visitParams(callback);
       segment.b.visitParams(callback);
@@ -459,23 +470,23 @@ export const ConstraintDefinitions
       pt2.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [x1, y1, x2, y2], {distance}) => {
-      polynomials.push(new Polynomial( - distance * distance)
+    collectPolynomials: (polynomials, [x1, y1, x2, y2], { distance }) => {
+      polynomials.push(new Polynomial(- distance * distance)
         .monomial(1)
-          .term(x1, POW_2_FN)
+        .term(x1, POW_2_FN)
         .monomial(1)
-          .term(x2, POW_2_FN)
+        .term(x2, POW_2_FN)
         .monomial(-2)
-          .term(x1, POW_1_FN)
-          .term(x2, POW_1_FN)
+        .term(x1, POW_1_FN)
+        .term(x2, POW_1_FN)
 
         .monomial(1)
-          .term(y1, POW_2_FN)
+        .term(y1, POW_2_FN)
         .monomial(1)
-          .term(y2, POW_2_FN)
+        .term(y2, POW_2_FN)
         .monomial(-2)
-          .term(y1, POW_1_FN)
-          .term(y2, POW_1_FN)
+        .term(y1, POW_1_FN)
+        .term(y2, POW_1_FN)
 
       );
     },
@@ -491,40 +502,40 @@ export const ConstraintDefinitions
       distance: {
         type: 'number',
         description: 'the distance between two points',
-        initialValue: ([p, l]) => {
-          return Math.abs(l.nx * p.x + l.ny* p.y - l.nx * l.a.x - l.ny * l.a.y);
+        initialValue: ([p, l]: [EndPoint, Segment]) => {
+          return Math.abs(l.nx * p.x + l.ny * p.y - l.nx * l.a.x - l.ny * l.a.y);
         },
       },
       inverted: {
         type: 'boolean',
         description: 'whether constraint is being calculated on opposite side of the line',
-        initialValue: ([p, l]) => {
-          return l.nx * p.x + l.ny* p.y - l.nx * l.a.x - l.ny * l.a.y < 0;
+        initialValue: ([p, l]: [EndPoint, Segment]) => {
+          return l.nx * p.x + l.ny * p.y - l.nx * l.a.x - l.ny * l.a.y < 0;
         },
       }
 
     },
 
-    defineParamsScope: ([p, l], callback) => {
+    defineParamsScope: ([p, l]: [EndPoint, Segment], callback) => {
       p.visitParams(callback);
       callback(l.params.ang);
       l.a.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [x, y, ang, ax, ay], {distance, inverted}) => {
-      polynomials.push(new Polynomial( - (inverted ? -1:1) * distance )
+    collectPolynomials: (polynomials, [x, y, ang, ax, ay], { distance, inverted }) => {
+      polynomials.push(new Polynomial(- (inverted ? -1 : 1) * distance)
         .monomial(-1)
-          .term(x, POW_1_FN)
-          .term(ang, SIN_FN)
+        .term(x, POW_1_FN)
+        .term(ang, SIN_FN)
         .monomial(1)
-          .term(y, POW_1_FN)
-          .term(ang, COS_FN)
+        .term(y, POW_1_FN)
+        .term(ang, COS_FN)
         .monomial(1)
-          .term(ax, POW_1_FN)
-          .term(ang, SIN_FN)
+        .term(ax, POW_1_FN)
+        .term(ang, SIN_FN)
         .monomial(-1)
-          .term(ay, POW_1_FN)
-          .term(ang, COS_FN));
+        .term(ay, POW_1_FN)
+        .term(ang, COS_FN));
     },
 
   },
@@ -538,20 +549,20 @@ export const ConstraintDefinitions
       angle: {
         type: 'number',
         description: 'line angle',
-        initialValue: ([seg]) => seg.getAngleFromNormal(),
-        transform: degree => ( (degree) % 360 ) * DEG_RAD
+        initialValue: ([seg]: [Segment]) => seg.getAngleFromNormal(),
+        transform: degree => ((degree) % 360) * DEG_RAD
       }
     },
 
-    defineParamsScope: ([segment], callback) => {
+    defineParamsScope: ([segment]: [Segment], callback) => {
       callback(segment.params.ang);
     },
 
-    collectPolynomials: (polynomials, [x], {angle}) => {
-      polynomials.push(new Polynomial( - angle).monomial(1).term(x, POW_1_FN));
+    collectPolynomials: (polynomials, [x], { angle }) => {
+      polynomials.push(new Polynomial(- angle).monomial(1).term(x, POW_1_FN));
     },
 
-    setConstantsFromGeometry: ([seg], constants) => {
+    setConstantsFromGeometry: ([seg]: [Segment], constants) => {
       constants.angle = seg.getAngleFromNormal();
     },
 
@@ -570,7 +581,7 @@ export const ConstraintDefinitions
         readOnly: true,
         type: 'number',
         description: 'line angle',
-        initialValue: ([seg]) => {
+        initialValue: ([seg]: [Segment]) => {
           const angleFromNormal = seg.angleDeg();
           return Math.abs(270 - angleFromNormal) > Math.abs(90 - angleFromNormal) ? 90 : 270;
         },
@@ -598,7 +609,7 @@ export const ConstraintDefinitions
         type: 'number',
         description: 'line angle',
         initialValue: ([seg]) => {
-          const ang = seg.angleDeg();
+          const ang = (seg as Segment).angleDeg();
           return Math.abs(180 - ang) > Math.min(Math.abs(360 - ang), Math.abs(0 - ang)) ? 0 : 180;
         },
         transform: degree => degree * DEG_RAD
@@ -623,7 +634,7 @@ export const ConstraintDefinitions
       angle: {
         type: 'number',
         description: 'line angle',
-        initialValue: ([segment1, segment2]) => {
+        initialValue: ([segment1, segment2]: [Segment, Segment]) => {
           const a1 = segment1.params.ang.get();
           const a2 = segment2.params.ang.get();
 
@@ -633,16 +644,16 @@ export const ConstraintDefinitions
       }
     },
 
-    defineParamsScope: ([segment1, segment2], callback) => {
+    defineParamsScope: ([segment1, segment2]: [Segment, Segment], callback: (param: Param) => void) => {
       callback(segment1.params.ang);
       callback(segment2.params.ang);
     },
 
-    collectPolynomials: (polynomials, [x1, x2], {angle}) => {
-      polynomials.push(new Polynomial( - angle).monomial(1).term(x2, POW_1_FN).monomial(-1).term(x1, POW_1_FN));
+    collectPolynomials: (polynomials, [x1, x2]: [Param, Param], { angle }: { angle: number }) => {
+      polynomials.push(new Polynomial(- angle).monomial(1).term(x2, POW_1_FN).monomial(-1).term(x1, POW_1_FN));
     },
 
-    createAnnotations: ([segment1, segment2], constraintInstance) => {
+    createAnnotations: ([segment1, segment2]: [Segment, Segment], constraintInstance: AlgNumConstraint) => {
       return [new AngleBetweenAnnotation(segment1, segment2, constraintInstance)];
     }
   },
@@ -657,7 +668,7 @@ export const ConstraintDefinitions
         type: 'number',
         description: 'line angle',
         readOnly: true,
-        initialValue: ([segment1, segment2]) => {
+        initialValue: ([segment1, segment2]: [Segment, Segment]) => {
           const a1 = segment1.params.ang.get();
           const a2 = segment2.params.ang.get();
           const deg = makeAngle0_360(a2 - a1);
@@ -667,11 +678,11 @@ export const ConstraintDefinitions
       }
     },
 
-    defineParamsScope: (objs, cb) => {
+    defineParamsScope: (objs: [Segment, Segment], cb: (param: Param) => void) => {
       ConstraintDefinitions.AngleBetween.defineParamsScope(objs, cb);
     },
 
-    collectPolynomials: (polynomials, params, constants) => {
+    collectPolynomials: (polynomials, params: [Param, Param], constants: { angle: number }) => {
       ConstraintDefinitions.AngleBetween.collectPolynomials(polynomials, params, constants);
     }
 
@@ -686,7 +697,7 @@ export const ConstraintDefinitions
       angle: {
         type: 'number',
         description: 'line angle',
-        initialValue: ([segment1, segment2]) => {
+        initialValue: ([segment1, segment2]: [Segment, Segment]) => {
           const a1 = segment1.params.ang.get();
           const a2 = segment2.params.ang.get();
           const ang = makeAngle0_360(a2 - a1);
@@ -702,11 +713,11 @@ export const ConstraintDefinitions
       },
     },
 
-    defineParamsScope: (objs, cb) => {
+    defineParamsScope: (objs: [Segment, Segment], cb: (param: Param) => void) => {
       ConstraintDefinitions.AngleBetween.defineParamsScope(objs, cb);
     },
 
-    collectPolynomials: (polynomials, params, constants) => {
+    collectPolynomials: (polynomials, params: [Param, Param], constants: { angle: number }) => {
       ConstraintDefinitions.AngleBetween.collectPolynomials(polynomials, params, constants);
     }
 
@@ -722,31 +733,31 @@ export const ConstraintDefinitions
       length: {
         type: 'number',
         description: 'length of the segment',
-        initialValue: ([segment]) => {
+        initialValue: ([segment]: [Segment]) => {
           const dx = segment.b.x - segment.a.x;
           const dy = segment.b.y - segment.a.y;
-          return Math.sqrt(dx*dx + dy*dy);
+          return Math.sqrt(dx * dx + dy * dy);
         },
 
         // transform: length => length * length
       }
     },
 
-    defineParamsScope: ([segment], callback) => {
+    defineParamsScope: ([segment]: [Segment], callback) => {
       callback(segment.params.t);
     },
 
-    collectPolynomials: (polynomials, [t], {length}) => {
-      polynomials.push(new Polynomial( - length).monomial(1).term(t, POW_1_FN));
+    collectPolynomials: (polynomials, [t], { length }) => {
+      polynomials.push(new Polynomial(- length).monomial(1).term(t, POW_1_FN));
     },
 
-    setConstantsFromGeometry: ([segment], constants) => {
+    setConstantsFromGeometry: ([segment]: [Segment], constants) => {
       const dx = segment.b.x - segment.a.x;
       const dy = segment.b.y - segment.a.y;
-      constants.length = Math.sqrt(dx*dx + dy*dy);
+      constants.length = Math.sqrt(dx * dx + dy * dy);
     },
 
-    createAnnotations: ([segment], constraintInstance) => {
+    createAnnotations: ([segment]: [Segment], constraintInstance) => {
       return [new LengthAnnotation(segment, constraintInstance)];
     }
   },
@@ -761,21 +772,21 @@ export const ConstraintDefinitions
       length: {
         type: 'number',
         description: 'length of the radius',
-        initialValue: ([c]) => {
+        initialValue: ([c]: [Circle]) => {
           return c.r.get();
         },
       },
     },
-    defineParamsScope: ([c], callback) => {
+    defineParamsScope: ([c]: [Circle], callback) => {
       callback(c.r);
     },
 
-    collectPolynomials: (polynomials, [r], {length}) => {
+    collectPolynomials: (polynomials, [r], { length }) => {
       polynomials.push(new Polynomial(-length).monomial(1).term(r, POW_1_FN));
     },
 
 
-    createAnnotations: ([segment], constraintInstance) => {
+    createAnnotations: ([segment]: [Segment], constraintInstance) => {
       return [new RadiusLengthAnnotation(segment, constraintInstance)];
     }
   },
@@ -784,14 +795,14 @@ export const ConstraintDefinitions
     id: 'Polar',
     name: 'Polar Coordinate',
 
-    defineParamsScope: ([segment, originPt, targetPt], callback) => {
+    defineParamsScope: ([segment, originPt, targetPt]: [Segment, EndPoint, EndPoint], callback) => {
       callback(segment.params.ang);
       callback(segment.params.t);
       originPt.visitParams(callback);
       targetPt.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [ang, t, x1, y1, x2, y2]) => {
+    collectPolynomials: (polynomials, [ang, t, x1, y1, x2, y2]: [Param, Param, Param, Param, Param, Param]) => {
       polynomials.push(new Polynomial().monomial(1).term(x1, POW_1_FN).monomial(1).term(ang, COS_FN).term(t, POW_1_FN).monomial(-1).term(x2, POW_1_FN));
       polynomials.push(new Polynomial().monomial(1).term(y1, POW_1_FN).monomial(1).term(ang, SIN_FN).term(t, POW_1_FN).monomial(-1).term(y2, POW_1_FN));
     },
@@ -802,12 +813,12 @@ export const ConstraintDefinitions
     name: 'Equal Radius',
     icon: EqualConstraintIcon,
 
-    defineParamsScope: ([c1, c2], callback) => {
+    defineParamsScope: ([c1, c2]: [Circle, Circle], callback: (param: Param) => void) => {
       callback(c1.r);
       callback(c2.r);
     },
 
-    collectPolynomials: (polynomials, [r1, r2]) => {
+    collectPolynomials: (polynomials, [r1, r2]: [Param, Param]) => {
       polynomials.push(new Polynomial().monomial().term(r1, POW_1_FN).monomial(-1).term(r2, POW_1_FN));
     },
   },
@@ -817,12 +828,12 @@ export const ConstraintDefinitions
     name: 'Equal Length',
     icon: EqualConstraintIcon,
 
-    defineParamsScope: ([s1, s2], callback) => {
+    defineParamsScope: ([s1, s2]: [Segment, Segment], callback) => {
       callback(s1.params.t);
       callback(s2.params.t);
     },
 
-    collectPolynomials: (polynomials, [t1, t2]) => {
+    collectPolynomials: (polynomials, [t1, t2]: [Param, Param]) => {
       polynomials.push(new Polynomial().monomial().term(t1, POW_1_FN).monomial(-1).term(t2, POW_1_FN));
     },
   },
@@ -836,27 +847,28 @@ export const ConstraintDefinitions
       x: {
         type: 'number',
         description: 'X Coordinate',
-        initialValue: ([pt]) => pt.x,
+        initialValue: ([pt]: [EndPoint]) => pt.x,
       },
       y: {
         type: 'number',
         description: 'y Coordinate',
-        initialValue: ([pt]) => pt.y,
+        initialValue: ([pt]: [EndPoint]) => pt.y,
       }
     },
 
-    defineParamsScope: ([pt], callback) => {
+    defineParamsScope: ([pt]: [EndPoint], callback: (param: Param) => void) => {
       pt.visitParams(callback);
     },
 
-    collectPolynomials: (polynomials, [px, py], {x, y}: ResolvedConstants) => {
+    collectPolynomials: (polynomials, [px, py], { x, y }: ResolvedConstants) => {
       polynomials.push(new Polynomial(-x).monomial().term(px, POW_1_FN));
       polynomials.push(new Polynomial(-y).monomial().term(py, POW_1_FN));
     },
 
     setConstantsFromGeometry: ([pt], constants: ConstantsDefinitions) => {
-      constants.x = pt.x + '';
-      constants.y = pt.y + '';
+      const point = pt as EndPoint;
+      constants.x = point.x + '';
+      constants.y = point.y + '';
     }
   },
 
@@ -872,17 +884,17 @@ export const ConstraintDefinitions
     collectPolynomials: (polynomials, [r, ang1, ang2, ax, ay, bx, by, cx, cy]) => {
       polynomials.push(new Polynomial()
         .monomial(-1).term(ax, POW_1_FN)
-        .monomial().term(cx, POW_1_FN).monomial().term(r, POW_1_FN).term(ang1, COS_FN) );
+        .monomial().term(cx, POW_1_FN).monomial().term(r, POW_1_FN).term(ang1, COS_FN));
       polynomials.push(new Polynomial()
         .monomial(-1).term(ay, POW_1_FN)
-        .monomial().term(cy, POW_1_FN).monomial().term(r, POW_1_FN).term(ang1, SIN_FN) );
+        .monomial().term(cy, POW_1_FN).monomial().term(r, POW_1_FN).term(ang1, SIN_FN));
 
       polynomials.push(new Polynomial()
         .monomial(-1).term(bx, POW_1_FN)
-        .monomial().term(cx, POW_1_FN).monomial().term(r, POW_1_FN).term(ang2, COS_FN) );
+        .monomial().term(cx, POW_1_FN).monomial().term(r, POW_1_FN).term(ang2, COS_FN));
       polynomials.push(new Polynomial()
         .monomial(-1).term(by, POW_1_FN)
-        .monomial().term(cy, POW_1_FN).monomial().term(r, POW_1_FN).term(ang2, SIN_FN) );
+        .monomial().term(cy, POW_1_FN).monomial().term(r, POW_1_FN).term(ang2, SIN_FN));
     },
   },
 
@@ -902,7 +914,7 @@ export const ConstraintDefinitions
       }
     },
 
-    defineParamsScope: ([l1, l2, arc], callback) => {
+    defineParamsScope: ([l1, l2, arc]: [Segment, Segment, Circle], callback: (param: Param) => void) => {
       callback(l1.params.ang);
       l1.a.visitParams(callback);
       callback(l2.params.ang);
@@ -911,7 +923,7 @@ export const ConstraintDefinitions
       callback(arc.r);
     },
 
-    collectPolynomials: (polynomials, [ang1, ax1, ay1, ang2, ax2, ay2, cx, cy, r], {inverted1, inverted2}) => {
+    collectPolynomials: (polynomials, [ang1, ax1, ay1, ang2, ax2, ay2, cx, cy, r]: [Param, Param, Param, Param, Param, Param, Param, Param, Param], { inverted1, inverted2 }: { inverted1: boolean, inverted2: boolean }) => {
       polynomials.push(tangentLCPolynomial(ang1, ax1, ay1, cx, cy, r, inverted1));
       polynomials.push(tangentLCPolynomial(ang2, ax2, ay2, cx, cy, r, inverted2));
     },
@@ -923,61 +935,61 @@ export const ConstraintDefinitions
 function tangentLCPolynomial(ang, ax, ay, cx, cy, r, inverted) {
   return new Polynomial(0)
     .monomial(-1)
-      .term(cx, POW_1_FN)
-      .term(ang, SIN_FN)
+    .term(cx, POW_1_FN)
+    .term(ang, SIN_FN)
     .monomial(1)
-      .term(cy, POW_1_FN)
-      .term(ang, COS_FN)
+    .term(cy, POW_1_FN)
+    .term(ang, COS_FN)
     .monomial(1)
-      .term(ax, POW_1_FN)
-      .term(ang, SIN_FN)
+    .term(ax, POW_1_FN)
+    .term(ang, SIN_FN)
     .monomial(-1)
-      .term(ay, POW_1_FN)
-      .term(ang, COS_FN)
+    .term(ay, POW_1_FN)
+    .term(ang, COS_FN)
     .monomial(- (inverted ? -1 : 1))
-      .term(r, POW_1_FN);
+    .term(r, POW_1_FN);
 }
 
 const bezier3Polynomial = (p, t, p0, p1, p2, p3) => new Polynomial()
   .monomial(-1)
-    .term(t, POW_3_FN)
-    .term(p0, POW_1_FN)
+  .term(t, POW_3_FN)
+  .term(p0, POW_1_FN)
   .monomial(3)
-    .term(t, POW_2_FN)
-    .term(p0, POW_1_FN)
+  .term(t, POW_2_FN)
+  .term(p0, POW_1_FN)
   .monomial(-3)
-    .term(t, POW_1_FN)
-    .term(p0, POW_1_FN)
+  .term(t, POW_1_FN)
+  .term(p0, POW_1_FN)
   .monomial(1)
   .term(p0, POW_1_FN)
 
   .monomial(3)
-    .term(t, POW_3_FN)
-    .term(p1, POW_1_FN)
+  .term(t, POW_3_FN)
+  .term(p1, POW_1_FN)
   .monomial(-6)
-    .term(t, POW_2_FN)
-    .term(p1, POW_1_FN)
+  .term(t, POW_2_FN)
+  .term(p1, POW_1_FN)
   .monomial(3)
-    .term(t, POW_1_FN)
-    .term(p1, POW_1_FN)
+  .term(t, POW_1_FN)
+  .term(p1, POW_1_FN)
 
   .monomial(-3)
-    .term(t, POW_3_FN)
-    .term(p2, POW_1_FN)
+  .term(t, POW_3_FN)
+  .term(p2, POW_1_FN)
   .monomial(3)
-    .term(t, POW_2_FN)
-    .term(p2, POW_1_FN)
+  .term(t, POW_2_FN)
+  .term(p2, POW_1_FN)
 
   .monomial(1)
-    .term(t, POW_3_FN)
-    .term(p3, POW_1_FN)
+  .term(t, POW_3_FN)
+  .term(p3, POW_1_FN)
 
   .monomial(-1)
-    .term(p, POW_1_FN);
+  .term(p, POW_1_FN);
 
 
 export type ResolvedConstants = { [p: string]: any };
-export type ConstantsDefinitions = { [p: string]: string };
+export type ConstantsDefinitions = { [p: string]: string | number };
 
 export interface ConstraintSchema {
 
@@ -991,16 +1003,22 @@ export interface ConstraintSchema {
       description?: string,
       transform?: (string) => any,
       initialValue(objects: SolvableObject[]): any;
+      presentation?: {
+        label: string,
+        type: string,
+        transformOut?: (value: any) => any,
+        transformIn?: (value: any) => any,
+      }
     }
   };
 
-  createAnnotations?: (objects: SolvableObject[], constraintInstance: AlgNumConstraint) =>  ConstraintAnnotation<any>[];
+  createAnnotations?: (objects: SketchObject[], constraintInstance: AlgNumConstraint) => ConstraintAnnotation<any>[];
 
-  defineParamsScope: (object: SolvableObject[], cb: (param: Param) => void) => void;
+  defineParamsScope: (object: SketchObject[], cb: (param: Param) => void) => void;
 
-  collectPolynomials(polynomials: Polynomial[], params: Param[], resolvedConstants: ResolvedConstants, objects: SolvableObject[]): void;
+  collectPolynomials(polynomials: Polynomial[], params: Param[], resolvedConstants?: ResolvedConstants, objects?: SketchObject[]): void;
 
-  setConstantsFromGeometry?: (object: SolvableObject[], resolvedConstants: ConstantsDefinitions) => void;
+  setConstantsFromGeometry?: (object: SketchObject[], resolvedConstants: ConstantsDefinitions) => void;
 
   initialGuess?(params: Param[], resolvedConstants: ResolvedConstants): void;
 }
@@ -1010,7 +1028,7 @@ export class AlgNumConstraint {
   static Counter = 0;
 
   id: string;
-  objects: SolvableObject[];
+  objects: SketchObject[];
   constants: ConstantsDefinitions;
   resolvedConstants: ResolvedConstants;
   internal: boolean;
@@ -1019,8 +1037,8 @@ export class AlgNumConstraint {
   stage: ISolveStage;
   annotations: ConstraintAnnotation<any>[];
 
-  constructor(schema: ConstraintSchema, objects: SolvableObject[], constants?: ConstantsDefinitions, internal: boolean = false) {
-    this.id = schema.id + ':' + (AlgNumConstraint.Counter ++); // only for debug purposes - not persisted
+  constructor(schema: ConstraintSchema, objects: SketchObject[], constants?: ConstantsDefinitions, internal: boolean = false) {
+    this.id = schema.id + ':' + (AlgNumConstraint.Counter++); // only for debug purposes - not persisted
     this.objects = objects;
     this.constants = constants;
     this.resolvedConstants = undefined;
@@ -1029,13 +1047,16 @@ export class AlgNumConstraint {
     this.params = [];
     this.stage = null;
 
-    if (this.schema.defineParamsScope) {
+    if (this.schema.defineParamsScope)
+    {
       this.schema.defineParamsScope(this.objects, p => this.params.push(p));
     }
 
-    if (!this.internal && this.schema.createAnnotations) {
+    if (!this.internal && this.schema.createAnnotations)
+    {
       this.annotations = this.schema.createAnnotations(this.objects, this);
-    } else {
+    } else
+    {
       this.annotations = [];
     }
   }
@@ -1045,20 +1066,25 @@ export class AlgNumConstraint {
   }
 
   resolveConstants(expressionResolver) {
-    if (this.constants) {
-      if (!this.resolvedConstants) {
+    if (this.constants)
+    {
+      if (!this.resolvedConstants)
+      {
         this.resolvedConstants = {};
       }
       Object.keys(this.constants).map(name => {
         const def = this.schema.constants[name];
         let val: any = this.constants[name];
         val = expressionResolver(val);
-        if (def.type === 'number') {
+        if (def.type === 'number')
+        {
           val = parseFloat(val);
-        } else if (def.type === 'boolean') {
+        } else if (def.type === 'boolean')
+        {
           val = val === 'true' || val === true;
         }
-        if (def.transform) {
+        if (def.transform)
+        {
           val = def.transform(val);
         }
         this.resolvedConstants[name] = val;
@@ -1071,29 +1097,33 @@ export class AlgNumConstraint {
       typeId: this.schema.id,
       objects: this.objects.map(o => o.id),
       constants: this.constants,
-      stage: this.stage&&this.stage.index,
+      stage: this.stage && this.stage.index,
       annotations: this.annotations.map(ann => ann.save())
     }
   }
 
-  static read({typeId, objects, constants, annotations}: ConstraintSerialization, index: {[key: string]: SolvableObject}) {
+  static read({ typeId, objects, constants, annotations }: ConstraintSerialization, index: { [key: string]: SketchObject }) {
     const schema = ConstraintDefinitions[typeId];
-    if (!schema) {
+    if (!schema)
+    {
       throw "constraint schema " + typeId + " doesn't exist";
     }
     const constraint = new AlgNumConstraint(schema, objects.map(oId => index[oId]), constants);
-    if (annotations) {
+    if (annotations)
+    {
       constraint.annotations.forEach((ann, i) => ann.load(annotations[i]));
     }
     return constraint;
   }
 
-   initConstants() {
-    if (this.schema.constants) {
+  initConstants() {
+    if (this.schema.constants)
+    {
       this.constants = {};
       this.constantKeys.map(name => {
         let val = this.schema.constants[name].initialValue(this.objects);
-        if (typeof val === 'number') {
+        if (typeof val === 'number')
+        {
           val = val.toFixed(2);
         }
         this.updateConstant(name, val + '');
@@ -1102,12 +1132,15 @@ export class AlgNumConstraint {
   }
 
   get editable() {
-    if (!this.schema.constants) {
+    if (!this.schema.constants)
+    {
       return false;
     }
     const defs = Object.values(this.schema.constants);
-    for (const cd of defs) {
-      if (!cd.readOnly) {
+    for (const cd of defs)
+    {
+      if (!cd.readOnly)
+      {
         return true;
       }
     }
@@ -1115,13 +1148,15 @@ export class AlgNumConstraint {
   }
 
   setConstantsFromGeometry() {
-    if (this.schema.setConstantsFromGeometry) {
+    if (this.schema.setConstantsFromGeometry)
+    {
       this.schema.setConstantsFromGeometry(this.objects, this.constants);
     }
   }
 
   initialGuess() {
-    if (this.schema.initialGuess) {
+    if (this.schema.initialGuess)
+    {
       this.schema.initialGuess(this.params, this.resolvedConstants);
     }
   }
