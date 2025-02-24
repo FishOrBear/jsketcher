@@ -578,8 +578,9 @@ export class AlgNumSubSystem {
   /**
    * 执行求解
    * @param rough - 是否进行粗略求解
+   * AlgNumSubSystem.prototype.solve
    */
-  solve(rough) {
+  solve(rough: boolean) {
 
     if (this.requiresHardSolve)
     {
@@ -761,11 +762,13 @@ class Isolation {
   /**
    * 求解隔离的系统
    * @param rough 是否进行粗略求解
+   * Isolation.prototype.solve
    */
-  solve(rough) {
+  solve(rough: boolean) {
 
     this.beingSolvedConstraints.forEach(c => c.initialGuess());
 
+    //预先获取所有的变量的值(比如求角度啊 A X Y)
     this.beingSolvedParams.forEach(solverParam => {
       let val = solverParam.objectParam.get();
 
@@ -779,8 +782,10 @@ class Isolation {
       solverParam.set(val);
     });
 
+    //在这里进行求解计算
     this.solveStatus = this.numericalSolver.solveSystem(rough);
 
+    //赋予值
     this.beingSolvedParams.forEach(solverParam => {
       solverParam.objectParam.set(solverParam.get());
     });

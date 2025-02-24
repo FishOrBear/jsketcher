@@ -1,21 +1,20 @@
-import {SketchObject, SketchObjectSerializationData} from './sketch-object'
-import {DrawPoint} from './draw-utils'
+import { dfs } from "gems/traverse";
 import Vector from 'math/vector';
-import {Param} from "./param";
-import {ConstraintDefinitions} from "../constr/ANConstraints";
-import {dfs} from "gems/traverse";
-import {SketchSegmentSerializationData} from "./segment";
+import { ConstraintDefinitions } from "../constr/ANConstraints";
+import { DrawPoint } from './draw-utils';
+import { Param } from "./param";
+import { SketchObject, SketchObjectSerializationData } from './sketch-object';
 
 export class EndPoint extends SketchObject {
 
-  params : {
+  params: {
     x: Param,
     y: Param
   };
 
   constructor(x, y, id?) {
     super(id);
-    this.params  = {
+    this.params = {
       x: new Param(x, 'X'),
       y: new Param(y, 'Y')
     };
@@ -57,7 +56,8 @@ export class EndPoint extends SketchObject {
 
   visitLinked(cb) {
     dfs(this, (obj, chCb) => obj.constraints.forEach(c => {
-      if (c.schema.id === ConstraintDefinitions.PCoincident.id) {
+      if (c.schema.id === ConstraintDefinitions.PCoincident.id)
+      {
         c.objects.forEach(chCb);
       }
     }), cb);
@@ -97,7 +97,7 @@ export class EndPoint extends SketchObject {
   }
 
   mirror(dest, mirroringFunc) {
-    const {x, y} = mirroringFunc(this.x, this.y);
+    const { x, y } = mirroringFunc(this.x, this.y);
     dest.x = x;
     dest.y = y;
   }
@@ -125,5 +125,3 @@ export interface SketchPointSerializationData extends SketchObjectSerializationD
 
 EndPoint.prototype._class = 'TCAD.TWO.EndPoint';
 EndPoint.prototype.TYPE = 'Point';
-
-

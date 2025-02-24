@@ -27,7 +27,10 @@ class ParametricManager {
     .map(() => [...this.stage.generators].sort((c1, c2) => c1.id - c2.id))
     .remember([]);
 
-  $stages = state({
+  $stages = state<{
+    list: SolveStage[],
+    pointer: number
+  }>({
     list: null,
     pointer: -1
   });
@@ -329,8 +332,11 @@ class ParametricManager {
     }
   }
 
-  solve(rough) {
-    this.groundStage.solve(rough);
+  //ParametricManager.prototype.solve
+  solve(rough: boolean) {
+    //this.groundStage.solve(rough);
+
+    //入口
     for (const stage of this.stages)
     {
       stage.solve(rough);
@@ -449,7 +455,7 @@ export class SolveStage implements ISolveStage {
   generators = new Set();
   objects = new Set<SolvableObject>();
   private parametricManager: ParametricManager;
-  private algNumSystem: AlgNumSubSystem;
+  algNumSystem: AlgNumSubSystem;
 
   constructor(parametricManager) {
     this.parametricManager = parametricManager;
